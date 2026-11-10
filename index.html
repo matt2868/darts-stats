@@ -13,8 +13,10 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root{
-  --bg:#f5f5f2; --card:#ffffff; --line:#e3e3de; --line2:#efefeb; --ink:#17191c; --muted:#5c6067; --faint:#a3a6ab;
-  --acc:#1f6f4a; --acc-soft:#e6f0ea; --acc-mid:#5f9478; --red:#b42318; --red-soft:#fbeae8;
+  --bg:#f6f4ef; --card:#ffffff; --line:#e6e2d9; --line2:#efece5; --ink:#17191c; --muted:#5c6067; --faint:#a3a6ab;
+  --acc:#1f6f4a; --acc-soft:#e3efe7; --acc-mid:#5f9478; --acc-line:#c6ddcd;
+  --warm:#e0703a; --warm-dark:#b04a17; --warm-soft:#fcebe0; --warm-line:#f3cdb3;
+  --red:#b42318; --red-soft:#fbeae8;
   --nav-h:62px; --safe-b:env(safe-area-inset-bottom, 0px);
 }
 *{box-sizing:border-box}
@@ -87,7 +89,7 @@ svg text{font-family:Inter,system-ui,sans-serif}
 .vrow .s{font-size:17px;font-weight:600;width:40px}
 .vrow .d{font-size:13px;color:var(--muted);flex:1;min-width:0}
 .vrow .l{font-size:15px;color:var(--muted)}
-.vrow.bust .s{color:var(--red);text-decoration:line-through}
+.vrow.bust .s{color:var(--warm-dark);text-decoration:line-through}
 .entry{display:flex;justify-content:space-between;align-items:center;padding:0 4px}
 .entry .v{font-size:36px;font-weight:700}
 .entry .v.ph{color:var(--faint)}
@@ -143,7 +145,12 @@ label.f{display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--mu
 .side{display:none}
 .vs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 .pl{background:var(--card);border:1.5px solid var(--line);border-radius:16px;padding:12px 14px;display:flex;flex-direction:column;gap:4px;min-width:0}
-.pl.on{border-color:var(--acc);box-shadow:0 0 0 3px var(--acc-soft)}
+.pl.me{background:var(--acc-soft);border-color:var(--acc-line)}
+.pl.cpu{background:var(--warm-soft);border-color:var(--warm-line)}
+.pl.me.on{border-color:var(--acc);box-shadow:0 0 0 3px var(--acc-line)}
+.pl.cpu.on{border-color:var(--warm);box-shadow:0 0 0 3px var(--warm-line)}
+.pl.cpu .route span{color:var(--warm-dark);background:#fff}
+.pl.me .route span{background:#fff}
 .pl .big{font-size:52px;font-weight:700;line-height:1;letter-spacing:-.03em}
 .pl .route{justify-content:flex-start;padding:0;min-height:28px}
 .pl .route span{font-size:13px;padding:3px 6px}
@@ -161,6 +168,25 @@ label.f{display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--mu
   .statbody>.tiles{column-span:all;grid-template-columns:repeat(4,minmax(0,1fr))}
   .setup{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;align-items:start}
 }
+.hero{background:var(--acc);border-color:var(--acc);color:#fff}
+.hero .muted,.hero .trio .l{color:#cfe3d6}
+.hero .route span{background:rgba(255,255,255,.16);color:#fff}
+.hero .route span.nf{background:rgba(255,255,255,.1);color:#cfe3d6}
+.hero .trio{border-top:1px solid rgba(255,255,255,.22);padding-top:10px}
+.tile.hero{background:var(--acc);border-color:var(--acc);color:#fff}
+.tile.hero .l,.tile.hero .s,.tile.hero .s.up{color:#d5e8dc}
+.tile.warm{background:var(--warm-soft);border-color:var(--warm-line)}
+.tile.warm .v{color:var(--warm-dark)}
+.fin{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.fin.one{grid-template-columns:1fr}
+.fin button{min-height:46px;border-radius:12px;font-size:15px;font-weight:600}
+.fin .co{background:var(--acc-soft);color:var(--acc);border:1.5px solid var(--acc)}
+.fin .bu{background:var(--warm-soft);color:var(--warm-dark);border:1.5px solid var(--warm-line)}
+.pickbtns{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.pickbtns button{min-height:68px;border:1.5px solid var(--line);background:#fff;border-radius:14px;font-size:26px;font-weight:700}
+.pickbtns button:active{background:var(--acc-soft);border-color:var(--acc)}
+.slot.next{border-color:var(--warm);background:var(--warm-soft)}
+.bar.warm i{background:var(--warm)}
 </style>
 </head>
 <body>
@@ -177,7 +203,7 @@ label.f{display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--mu
 <input type="file" id="importFile" accept="application/json,.json" hidden>
 <script>
 "use strict";
-const APP_VERSION = "1.1";
+const APP_VERSION = "1.2";
 /* ===================== helpers ===================== */
 const $ = (s, el = document) => el.querySelector(s);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -394,13 +420,12 @@ function likelyScores(leg) {
   const rem = legRem(leg), out = leg.out, H = pickHistory();
   const hist = rem <= 170 ? (H.byRem.get(rem) || new Map()) : H.high;
   const w = new Map();
-  for (const [sc, p] of visitDist(rem, S.set.aim, out)) w.set(sc, 3 * p);   // worth about three visits of your own history
+  for (const [sc, p] of visitDist(rem, "T20", out)) w.set(sc, 3 * p);   // worth about three visits of your own history
   for (const [sc, c] of hist) w.set(sc, (w.get(sc) || 0) + c);
   const fin = canFinish(rem, out) && rem <= 180;
   const ok = sc => sc <= 180 && !IMPOSSIBLE.has(sc) && (sc <= rem - (out === "double" ? 2 : 1) || (sc === rem && fin));
-  let list = [...w.entries()].filter(([sc]) => ok(sc)).sort((a, b) => b[1] - a[1]).map(([sc]) => sc).slice(0, 6);
-  if (fin && !list.includes(rem)) list = [...list.slice(0, 5), rem];
-  return list;
+  const list = [...w.entries()].filter(([sc]) => ok(sc)).sort((a, b) => b[1] - a[1]).map(([sc]) => sc).slice(0, 7);
+  return list.filter(sc => sc !== rem).slice(0, 6);   // the checkout has its own button
 }
 
 /* ===================== leg maths ===================== */
@@ -412,7 +437,7 @@ const legDarts = l => sum(l.v.map(dartsOf));
 function doubleInfo(v, out) {
   if (v.d && v.d.length && out === "double") {
     let r = v.r, att = 0; const per = [];
-    for (const s of v.d) { const t = finishTarget(r); if (t) { att++; per.push({ t, hit: s === t }); } r -= VAL[s]; if (r <= 1 && r !== 0) break; if (r === 0) break; }
+    for (let k = 0; k < v.d.length; k++) { const s = v.d[k]; const t = finishTarget(r); if (t) { att++; per.push({ t, hit: s === t, k }); } r -= VAL[s]; if (r <= 1 && r !== 0) break; if (r === 0) break; }
     return { att, per };
   }
   return { att: v.dd || 0, per: null };
@@ -458,9 +483,9 @@ function viewPlay() {
     return `<div class="vrow${v.b ? " bust" : ""}"><span class="n">${i + 1}</span><span class="s">${v.s}</span><span class="d">${v.b ? "Bust" : v.d ? v.d.map(segLabel).join(" · ") : ""}</span><span class="l">${left}</span></div>`;
   }).join("");
   const board = m ? scoreboard(leg, m) : `
-  <div class="card stack" style="gap:12px;padding:14px 18px">
+  <div class="card stack hero" style="gap:12px;padding:14px 18px">
     <div class="rem"><div style="display:flex;flex-direction:column"><span class="s13 muted">Remaining</span><span class="big">${rem}</span></div><div class="route">${rt}</div></div>
-    <div class="trio" style="border-top:1px solid var(--line);padding-top:10px">
+    <div class="trio">
       <div><span class="l">Darts</span><span class="v">${legDarts(leg)}</span></div>
       <div><span class="l">Leg avg</span><span class="v">${lAvg == null ? "–" : f1(lAvg)}</span></div>
       <div><span class="l">Session avg</span><span class="v">${sAvg == null ? "–" : f1(sAvg)}</span></div></div>
@@ -468,30 +493,37 @@ function viewPlay() {
   const quick = likelyScores(leg);
   return `<div class="pane-l">
   <div class="p-head"><span class="t">${m ? `${leg.st} · Leg ${leg.m.leg} · first to ${m.first}` : `${leg.st} · Leg ${leg.n}`}</span>
-    <div class="row"><button class="chip" data-act="aim">Aim ${S.set.aim === "SB" ? "Bull" : segLabel(S.set.aim)}</button><button class="chip" data-act="leg-menu" aria-label="Leg options">•••</button></div></div>
+    <button class="chip" data-act="leg-menu" aria-label="Leg options">•••</button></div>
   ${board}
   ${leg.v.length ? `<div class="card visits">${visits}</div>` : ""}
   ${sideInfo(leg, m)}
   </div><div class="pane-r">
   <div class="entry"><span class="s13 muted">${myTurn ? `Visit ${leg.v.length + 1}` : "CPU throwing…"}</span><span class="v${S.input ? "" : " ph"}" id="entry">${S.input || "0"}</span></div>
   <div class="quick${myTurn ? "" : " wait"}" aria-label="Likely scores">${quick.map(q => `<button data-quick="${q}" class="${q === rem ? "out" : ""}" aria-label="Score ${q}${q === rem ? ", checkout" : ""}">${q}</button>`).join("")}</div>
+  ${finRow(leg, myTurn)}
   <div class="keypad${myTurn ? "" : " wait"}">
     ${[1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => `<button data-key="${n}">${n}</button>`).join("")}
     <button class="fn" data-key="back" id="backkey">${S.input ? "Delete" : "Undo"}</button><button data-key="0">0</button><button class="go" data-key="next">Next</button>
   </div></div>`;
 }
+/** Checked out / Bust: shown once a finish or a bust is possible this visit. */
+function finRow(leg, myTurn) {
+  const rem = legRem(leg), out = leg.out, fin = canFinish(rem, out) && rem <= 180;
+  if (rem > (out === "double" ? 181 : 180)) return "";
+  return `<div class="fin${fin ? "" : " one"}${myTurn ? "" : " wait"}">${fin ? `<button class="co" data-act="checkout">Checked out ${rem}</button>` : ""}<button class="bu" data-act="bust">Bust</button></div>`;
+}
 function routeChips(rem, out) {
   const rt = rem <= (out === "straight" ? 180 : 170) ? route(rem, 3, out) : null;
-  return rt ? rt.map(x => `<span>${segLabel(x)}</span>`).join("") : rem <= 170 && out === "double" ? `<span style="color:var(--muted);background:var(--bg)">No finish</span>` : "";
+  return rt ? rt.map(x => `<span>${segLabel(x)}</span>`).join("") : rem <= 170 && out === "double" ? `<span class="nf" style="color:var(--muted);background:var(--bg)">No finish</span>` : "";
 }
 function scoreboard(leg, m) {
   const cv = leg.m.cpuV, last = cv[cv.length - 1], sh = S.cpuShow, cr = cpuRem(leg);
   const shown = sh ? Math.max(0, sh.rem - sum(sh.d.map(x => VAL[x]))) : cr;
   const ml = matchLegs(m.id), ca = cpuAvg(ml), ma = avgOf(ml);
   return `<div class="vs">
-    <div class="pl${m.turn === "me" ? " on" : ""}"><div class="between"><span class="h2">You</span><span class="s13 muted">legs ${m.me}</span></div>
+    <div class="pl me${m.turn === "me" ? " on" : ""}"><div class="between"><span class="h2">You</span><span class="s13 muted">legs ${m.me}</span></div>
       <span class="big">${legRem(leg)}</span><div class="route">${routeChips(legRem(leg), leg.out)}</div><span class="small muted">avg ${ma == null ? "–" : f1(ma)}</span></div>
-    <div class="pl${m.turn === "cpu" ? " on" : ""}"><div class="between"><span class="h2">CPU ${m.lvl}</span><span class="s13 muted">legs ${m.cpu}</span></div>
+    <div class="pl cpu${m.turn === "cpu" ? " on" : ""}"><div class="between"><span class="h2">CPU ${m.lvl}</span><span class="s13 muted">legs ${m.cpu}</span></div>
       <span class="big">${shown}</span><div class="cd">${sh ? sh.d.map(segLabel).join(" · ") + (sh.d.length < 3 ? " …" : "") : last ? `${last.b ? "Bust" : last.s}: ${last.d.map(segLabel).join(" · ")}` : leg.m.starter === "cpu" ? "throws first" : "waiting"}</div><span class="small muted">avg ${ca == null ? "–" : f1(ca)}</span></div>
   </div>`;
 }
@@ -531,7 +563,6 @@ function viewSetup() {
       <div><p class="h2">Match length</p><div class="chips" style="margin-top:8px">${[1, 2, 3, 4, 5].map(n => opt("first", n, n === 1 ? "1 leg" : `First to ${n}`)).join("")}</div><p class="sub">You throw first in leg 1, then it alternates.</p></div>` : ""}
       <div><p class="h2">Starting score</p><div class="chips" style="margin-top:8px">${[301, 501, 701].map(n => opt("start", n, n)).join("")}</div></div>
       <div><p class="h2">Finish</p><div class="chips" style="margin-top:8px">${opt("out", "double", "Double out")}${opt("out", "straight", "Straight out")}</div></div>
-      <div><p class="h2">Aiming at</p><div class="chips" style="margin-top:8px">${["T20", "T19", "T18", "SB"].map(a => opt("aim", a, a === "SB" ? "Bull" : a)).join("")}</div><p class="sub">Used to suggest scores and darts. You can change it mid-leg.</p></div>
       <button class="btn primary" data-act="${cpu ? "m-start" : "start"}">${cpu ? (m ? "Start a new match" : "Start match") : sl.length ? "Next leg" : "Start practice"}</button>
     </div></div>
     ${sl.length ? `<div class="card"><div class="between"><p class="h2">This session</p><button class="chip" data-act="end-session">End session</button></div>
@@ -653,7 +684,7 @@ function submitScore() {
   const rem = legRem(leg), after = rem - s, out = leg.out;
   const finishing = after === 0 && canFinish(rem, out);
   const bust = after < 0 || (out === "double" && (after === 1 || (after === 0 && !finishing)));
-  const draft = { s, r: rem, a: S.set.aim, t: Date.now(), b: bust || undefined, f: finishing || undefined };
+  const draft = { s, r: rem, t: Date.now(), b: bust || undefined, f: finishing || undefined };
   S.input = "";
   const needDarts = S.set.ask === "always" || (S.set.ask === "finishes" && rem <= 170);
   if (needDarts && (s > 0 || finishing)) openPicker(leg, draft);
@@ -691,40 +722,80 @@ function saveVisit(leg, v) {
 function openSheet(html) { const sh = $("#sheet"); sh.innerHTML = `<div class="grab"></div>` + html; sh.style.display = "block"; $("#scrim").style.display = "block"; sh.scrollTop = 0; }
 function closeSheet() { $("#sheet").style.display = "none"; $("#scrim").style.display = "none"; S.sheet = null; }
 function openPicker(leg, draft) {
-  const out = leg.out, list = suggest(draft.s, draft.r, draft.a, out, !!draft.f);
-  S.sheet = { kind: "pick", leg: leg.id, v: draft, list, sel: list.length ? 0 : -1, order: list.length ? list[0].darts.slice() : [], swap: null, build: !list.length, b: { mult: "S", darts: [] } };
+  const list = suggest(draft.s, draft.r, "T20", leg.out, !!draft.f).map(o => ({ ...o, set: draft.f ? o.darts.slice() : o.darts.slice().sort((a, b) => VAL[b] - VAL[a] || IDX[a] - IDX[b]) }));   // finishes show the double last
+  S.sheet = { kind: "pick", leg: leg.id, v: draft, list, step: list.length ? "list" : "build", b: { mult: "S", darts: [] } };
   drawPicker();
 }
+function openBust(leg, draft) {
+  S.sheet = { kind: "pick", leg: leg.id, v: draft, list: [], step: "build", bust: true, b: { mult: "S", darts: [] } };
+  drawPicker();
+}
+function chooseCombo(i) {
+  const P = S.sheet, leg = S.legs.get(P.leg), o = P.list[i];
+  P.combo = o.set.slice();
+  const valid = perms(P.combo).filter(q => validSeq(q, P.v.r, !!P.v.f, leg.out));
+  if (valid.length === 1) { P.order = valid[0]; return finishOrder(); }   // only one way it could have gone
+  P.left = P.combo.slice(); P.order = []; P.step = "order"; drawPicker();
+}
+function tapOrder(i) {
+  const P = S.sheet;
+  P.order.push(P.left.splice(i, 1)[0]);
+  if (new Set(P.left).size <= 1) { P.order.push(...P.left); P.left = []; }
+  if (!P.left.length) return finishOrder();
+  drawPicker();
+}
+function finishOrder() {
+  const P = S.sheet, leg = S.legs.get(P.leg);
+  if (!validSeq(P.order, P.v.r, !!P.v.f, leg.out)) { toast("The double has to be the last dart: tap them again"); P.left = P.combo.slice(); P.order = []; P.step = "order"; drawPicker(); return; }
+  P.v.d = P.order.slice(); askOrSave(leg, P.v, true);
+}
+const dchip = x => `<span>${segLabel(x)}</span>`;
 function drawPicker() {
   const P = S.sheet, v = P.v, leg = S.legs.get(P.leg), after = v.r - v.s;
-  const head = v.f ? `Checkout · ${v.s}` : v.b ? `Bust · ${v.s} thrown` : `Visit ${leg.v.length + 1} · leaves ${after}`;
-  let body;
-  if (P.build) {
-    const B = P.b, tot = sum(B.darts.map(s => VAL[s])), need = v.s - tot;
+  const head = P.bust ? `Bust from ${v.r}` : v.f ? `Checkout · ${v.s}` : v.b ? `Bust · ${v.s} thrown` : `Visit ${leg.v.length + 1} · leaves ${after}`;
+  let title = `${v.s} — which darts?`, body;
+  if (P.step === "build") {
+    if (P.bust) title = "Bust — which darts?";
+    const B = P.b, tot = sum(B.darts.map(x => VAL[x])), need = v.s - tot;
     const nums = Array.from({ length: 20 }, (_, i) => i + 1).map(n => `<button data-bnum="${n}">${n}</button>`).join("");
     const ok = buildOk();
+    const note = P.bust ? (B.darts.length ? `Total ${tot}. The last dart should be the one that bust.` : "Tap the darts in the order you threw them, ending with the one that bust.")
+      : B.darts.length ? `Total ${tot}${need > 0 ? ` · ${need} still to place` : need < 0 ? ` · ${-need} too many` : " ✓"}${v.f && leg.out === "double" ? ". The last dart must be a double." : ""}` : `Tap the darts in the order you threw them.${v.f && leg.out === "double" ? " The last dart must be a double." : ""}`;
     body = `
-    <div class="slots">${[0, 1, 2].map(i => `<button class="slot${B.darts[i] ? "" : " empty"}${i === B.darts.length ? " on" : ""}" data-bslot="${i}"><span class="l">Dart ${i + 1}</span><span class="v">${B.darts[i] ? segLabel(B.darts[i]) : "–"}</span></button>`).join("")}</div>
-    <div class="between"><div class="seg" style="flex:1">${["S", "D", "T"].map(m => `<button class="${B.mult === m ? "on" : ""}" data-bmult="${m}">${m === "S" ? "Single" : m === "D" ? "Double" : "Treble"}</button>`).join("")}</div></div>
+    <div class="slots">${[0, 1, 2].map(i => `<button class="slot${B.darts[i] ? "" : " empty"}${i === B.darts.length ? " next" : ""}" data-bslot="${i}"><span class="l">Dart ${i + 1}</span><span class="v">${B.darts[i] ? segLabel(B.darts[i]) : "–"}</span></button>`).join("")}</div>
+    <div class="seg">${["S", "D", "T"].map(m => `<button class="${B.mult === m ? "on" : ""}" data-bmult="${m}">${m === "S" ? "Single" : m === "D" ? "Double" : "Treble"}</button>`).join("")}</div>
     <div class="numgrid">${nums}<button data-bseg="SB">25</button><button data-bseg="DB">Bull</button><button data-bseg="M" style="grid-column:span 3">Miss</button></div>
-    <p class="sub" style="margin:0">${B.darts.length ? `Total ${tot}${need > 0 ? ` · ${need} still to place` : need < 0 ? ` · ${-need} too many` : " ✓"}` : `Tap the darts in the order you threw them.`}${v.f && leg.out === "double" ? " The last dart must be a double." : ""}</p>
+    <p class="sub" style="margin:0">${note}</p>
     <div class="row"><button class="btn ghost grow" data-act="b-clear">Clear</button>${P.list.length ? `<button class="btn ghost grow" data-act="b-back">Suggestions</button>` : ""}</div>
     <div class="row"><button class="btn ghost grow" data-act="p-skip">Skip darts</button><button class="btn primary" style="flex:2" data-act="b-save"${ok ? "" : " disabled"}>Save visit</button></div>`;
-  } else {
-    const opts = P.list.map((o, i) => `<button class="opt${i === P.sel ? " on" : ""}" data-popt="${i}"><span class="radio"></span><span class="darts">${o.darts.map(s => `<span>${segLabel(s)}</span>`).join("")}</span><span class="small muted">${o.used ? "usual" : ""}</span></button>`).join("");
-    const sel = P.list[P.sel];
+  } else if (P.step === "order") {
+    title = "Tap them in the order you threw";
+    const n = P.combo.length;
     body = `
-    <div class="opts">${opts}<button class="opt" data-act="p-build"><span class="grow" style="font-size:15px;font-weight:500">Something else…</span><span class="small muted">build it dart by dart</span></button></div>
-    ${sel ? `<div class="stack" style="gap:8px"><div class="between"><span class="h2">Order thrown</span><span class="small muted">${sel.darts.length > 1 ? "tap two darts to swap them" : ""}</span></div>
-      <div class="slots">${P.order.map((s, i) => `<button class="slot${P.swap === i ? " on" : ""}" data-pslot="${i}"><span class="l">Dart ${i + 1}</span><span class="v">${segLabel(s)}</span></button>`).join("")}</div>
-      ${!validSeq(P.order, v.r, !!v.f, leg.out) ? `<p class="sub" style="color:var(--red);margin:0">That order can't finish: the last dart has to be the double.</p>` : ""}</div>` : ""}
-    <div class="row"><button class="btn ghost grow" data-act="p-skip">Skip darts</button><button class="btn primary" style="flex:2" data-act="p-save"${sel && validSeq(P.order, v.r, !!v.f, leg.out) ? "" : " disabled"}>Save visit</button></div>`;
+    <div class="slots">${Array.from({ length: n }, (_, i) => `<div class="slot${P.order[i] ? "" : " empty"}${i === P.order.length ? " next" : ""}"><span class="l">Dart ${i + 1}</span><span class="v">${P.order[i] ? segLabel(P.order[i]) : "–"}</span></div>`).join("")}</div>
+    <div class="pickbtns">${P.left.map((x, i) => `<button data-pord="${i}" aria-label="${segLabel(x)}">${segLabel(x)}</button>`).join("")}</div>
+    <div class="row"><button class="btn ghost grow" data-act="p-back">Back</button><button class="btn ghost grow" data-act="p-reset"${P.order.length ? "" : " disabled"}>Start again</button></div>`;
+  } else {
+    body = `
+    <div class="opts">${P.list.map((o, i) => `<button class="opt" data-popt="${i}"><span class="darts">${o.set.map(dchip).join("")}</span><span class="small muted">${o.used ? "usual" : ""}</span></button>`).join("")}
+      <button class="opt" data-act="p-build"><span class="grow" style="font-size:15px;font-weight:500">Something else…</span><span class="small muted">tap each dart</span></button></div>
+    <button class="btn ghost" data-act="p-skip">Skip darts</button>`;
   }
-  openSheet(`<div class="stack" style="gap:14px"><div><span class="s13 muted">${esc(head)}</span><p class="sheet-title">${v.s} — which darts?</p></div>${body}</div>`);
+  openSheet(`<div class="stack" style="gap:14px"><div><span class="s13 muted">${esc(head)}</span><p class="sheet-title">${esc(title)}</p></div>${body}</div>`);
 }
 function buildOk() {
-  const P = S.sheet, v = P.v, leg = S.legs.get(P.leg), d = P.b.darts;
-  if (!d.length || sum(d.map(s => VAL[s])) !== v.s) return false;
+  const P = S.sheet, v = P.v, leg = S.legs.get(P.leg), d = P.b.darts, dbl = leg.out === "double";
+  if (!d.length) return false;
+  if (P.bust) {
+    let r = v.r;
+    for (let i = 0; i < d.length; i++) {
+      r -= VAL[d[i]];
+      const bust = r < 0 || (dbl && (r === 1 || (r === 0 && !isDbl(d[i])))) ;
+      if (i < d.length - 1 && (bust || r === 0)) return false;
+      if (i === d.length - 1) return bust;
+    }
+  }
+  if (sum(d.map(x => VAL[x])) !== v.s) return false;
   if (v.f) return validSeq(d, v.r, true, leg.out);
   return d.length === 3;
 }
@@ -766,7 +837,9 @@ function compute(legs) {
   const st = { legs: legs.length, done: 0, visits: 0, darts: 0, points: 0, f9p: 0, f9d: 0, scores: [], busts: 0, s60: 0, s100: 0, s140: 0, s180: 0,
     dd: 0, outs: 0, ddKnownLegs: 0, ranges: [[2, 40], [41, 60], [61, 100], [101, 170]].map(([a, b]) => ({ a, b, att: 0, hit: 0 })),
     legDarts: [], outsVals: [], dbl: new Map(), byVisit: [], sessions: new Map(), byLegNo: [], byHour: [0, 1, 2, 3].map(() => ({ p: 0, d: 0 })),
-    picked: 0, aimDarts: new Map() };
+    picked: 0, heat: { all: new Map(), scoring: new Map(), finishing: new Map(), dbl: new Map() },
+    byDart: [0, 1, 2].map(() => ({ n: 0, p: 0, t: 0, t20: 0, b20: 0 })), after: { t: { n: 0, h: 0 }, o: { n: 0, h: 0 } }, dblPos: [0, 1, 2].map(() => ({ att: 0, hit: 0 })) };
+  const inc = (m, k) => m.set(k, (m.get(k) || 0) + 1);
   for (const l of legs) {
     let lp = 0, ld = 0;
     const out = l.out;
@@ -782,12 +855,21 @@ function compute(legs) {
         if (di.att) {
           st.dd += di.att; if (v.f) st.outs++;
           const rg = st.ranges.find(x => v.r >= x.a && v.r <= x.b); if (rg) { rg.att += di.att; if (v.f) rg.hit++; }
-          (di.per || []).forEach(x => { const e = st.dbl.get(x.t) || { att: 0, hit: 0 }; e.att++; if (x.hit) e.hit++; st.dbl.set(x.t, e); });
+          (di.per || []).forEach(x => { const e = st.dbl.get(x.t) || { att: 0, hit: 0 }; e.att++; if (x.hit) e.hit++; st.dbl.set(x.t, e); const dp = st.dblPos[x.k]; if (dp) { dp.att++; if (x.hit) dp.hit++; } });
         }
       }
       if (v.d && v.d.length) {
         st.picked++;
-        let r = v.r; v.d.forEach((s, k) => { const a = aimFor(r, 3 - k, v.a || "T20", out); const t = finishTarget(r); if (!(out === "double" && t) && (a[0] === "T" || a === "SB" || a === "DB")) { const m = st.aimDarts.get(a) || new Map(); m.set(s, (m.get(s) || 0) + 1); st.aimDarts.set(a, m); } r -= VAL[s]; });
+        let r = v.r, prev = null;
+        v.d.forEach((x, k) => {
+          inc(st.heat.all, x); inc(r > 170 ? st.heat.scoring : st.heat.finishing, x);
+          if (out === "double" && finishTarget(r)) inc(st.heat.dbl, x);
+          if (r > 170 && k < 3) {
+            const b = st.byDart[k]; b.n++; b.p += VAL[x]; if (x[0] === "T") b.t++; if (x === "T20") b.t20++; if (x === "S20" || x === "T20" || x === "D20") b.b20++;
+            if (prev) { const a = prev.x === "T20" ? st.after.t : st.after.o; if (prev.sc) { a.n++; if (x === "T20") a.h++; } }
+          }
+          prev = { x, sc: r > 170 }; r -= VAL[x];
+        });
       }
     });
     const h = new Date(l.at).getHours(), hb = h < 12 ? 0 : h < 17 ? 1 : h < 21 ? 2 : 3;
@@ -823,9 +905,10 @@ function lineChart(vals, opt = {}) {
   const pts = vals.map((v, i) => X(i).toFixed(1) + "," + Y(v).toFixed(1)).join(" ");
   return `<svg width="100%" viewBox="0 0 ${w} ${h}" role="img" aria-label="${esc(opt.label || "Line chart")}">
     ${ticks.map(t => `<line x1="${L}" x2="${w - R}" y1="${Y(t).toFixed(1)}" y2="${Y(t).toFixed(1)}" stroke="#efefeb"/><text x="0" y="${(Y(t) + 4).toFixed(1)}" font-size="11" fill="#5c6067">${t}</text>`).join("")}
-    ${opt.mean != null ? `<line x1="${L}" x2="${w - R}" y1="${Y(opt.mean).toFixed(1)}" y2="${Y(opt.mean).toFixed(1)}" stroke="#5c6067" stroke-dasharray="4 4"/>` : ""}
+    ${opt.mean != null ? `<line x1="${L}" x2="${w - R}" y1="${Y(opt.mean).toFixed(1)}" y2="${Y(opt.mean).toFixed(1)}" stroke="#e0703a" stroke-width="1.5" stroke-dasharray="4 4"/>` : ""}
     <polyline points="${pts}" fill="none" stroke="#1f6f4a" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>
     ${vals.length <= 30 ? vals.map((v, i) => `<circle cx="${X(i).toFixed(1)}" cy="${Y(v).toFixed(1)}" r="3.2" fill="#fff" stroke="#1f6f4a" stroke-width="2"/>`).join("") : ""}
+    <circle cx="${X(vals.length - 1).toFixed(1)}" cy="${Y(vals[vals.length - 1]).toFixed(1)}" r="4.5" fill="#e0703a" stroke="#fff" stroke-width="2"/>
     ${opt.xl ? `<text x="${L}" y="${h - 4}" font-size="11" fill="#5c6067">${esc(opt.xl[0])}</text><text x="${w - R}" y="${h - 4}" font-size="11" fill="#5c6067" text-anchor="end">${esc(opt.xl[1])}</text>` : ""}
   </svg>`;
 }
@@ -846,18 +929,18 @@ function boardHeat(counts) {
   // singles are split across the two single beds, so divide by 2 to compare like with like
   const share = s => (counts.get(s) || 0) / tot;
   const mx = Math.max(...ALL.filter(s => s !== "M").map(s => s[0] === "S" ? share(s) / 2 : share(s)), 1e-9);
-  const stops = [[242, 245, 243], [156, 188, 169], [31, 111, 74], [15, 61, 40]];
+  const stops = [[251, 240, 231], [242, 172, 120], [218, 100, 44], [140, 52, 16]];
   const col = v => { const t = Math.min(1, Math.sqrt(v / mx)) * 3, i = Math.min(2, Math.floor(t)), f = t - i; return "rgb(" + stops[i].map((s, k) => Math.round(s + (stops[i + 1][k] - s) * f)).join(",") + ")"; };
   const rings = [[16, 80, "S", 2], [80, 96, "T", 1], [96, 132, "S", 2], [132, 146, "D", 1]];
   let paths = "";
   ORDER.forEach((n, i) => { const a1 = i * 18 - 9, a2 = a1 + 18; rings.forEach(([r1, r2, k, dv]) => { paths += `<path d="${arc(r1, r2, a1, a2)}" fill="${col(share(k + n) / dv)}" stroke="#fff" stroke-width=".8"/>`; }); });
   const labels = ORDER.map((n, i) => { const [x, y] = P(158, i * 18); return `<text x="${x}" y="${y}" font-size="12" font-weight="600" fill="#5c6067" text-anchor="middle" dominant-baseline="central">${n}</text>`; }).join("");
   return `<svg width="100%" viewBox="0 0 340 340" role="img" aria-label="Board heat map of where your darts landed" style="max-width:340px;display:block;margin:0 auto">
-    <circle cx="170" cy="170" r="146" fill="#f2f5f3"/>${paths}
+    <circle cx="170" cy="170" r="146" fill="#fbf0e7"/>${paths}
     <circle cx="170" cy="170" r="16" fill="${col(share("SB"))}" stroke="#fff" stroke-width=".8"/><circle cx="170" cy="170" r="7" fill="${col(share("DB"))}" stroke="#fff" stroke-width=".8"/>${labels}</svg>
-    <div class="row small muted" style="margin-top:6px"><span>fewer</span><div style="flex:1;height:8px;border-radius:4px;background:linear-gradient(90deg,#f2f5f3,#9cbca9,#1f6f4a,#0f3d28)"></div><span>more</span></div>`;
+    <div class="row small muted" style="margin-top:6px"><span>fewer</span><div style="flex:1;height:8px;border-radius:4px;background:linear-gradient(90deg,#fbf0e7,#f2ac78,#da642c,#8c3410)"></div><span>more</span></div>`;
 }
-const tile = (l, v, s = "", cls = "") => `<div class="tile"><span class="l">${l}</span><span class="v">${v}</span><span class="s ${cls}">${s}</span></div>`;
+const tile = (l, v, s = "", cls = "", kind = "") => `<div class="tile ${kind}"><span class="l">${l}</span><span class="v">${v}</span><span class="s ${cls}">${s}</span></div>`;
 const kv = (l, v) => `<div class="kv"><span>${l}</span><b>${v}</b></div>`;
 const brow = (lab, n, p, w, c) => `<div class="brow"><span class="lab">${lab}</span><div class="bar"><i style="width:${Math.max(0, Math.min(100, w))}%;${c ? "background:" + c : ""}"></i></div><span class="n">${n}</span><span class="p">${p}</span></div>`;
 function delta(cur, prev, unit = "", better = 1) {
@@ -874,7 +957,7 @@ function viewStats() {
   const body = { overview: statsOverview, scoring: statsScoring, finishing: statsFinishing, accuracy: statsAccuracy, progress: statsProgress }[S.stats.tab](st, p);
   return head + `<p class="s13 muted" style="margin:0 0 12px">${fmtN(st.legs)} legs · ${fmtN(st.visits)} visits · ${fmtN(st.darts)} darts</p><div class="stack statbody">${body}</div>`;
 }
-const BANDS = [["Under 40", 0, 39, "#c9d9cf"], ["40–59", 40, 59, "#9cbca9"], ["60–99", 60, 99, "#5f9478"], ["100–139", 100, 139, "#1f6f4a"], ["140+", 140, 180, "#0f3d28"]];
+const BANDS = [["Under 40", 0, 39, "#c9d9cf"], ["40–59", 40, 59, "#9cbca9"], ["60–99", 60, 99, "#5f9478"], ["100–139", 100, 139, "#1f6f4a"], ["140+", 140, 180, "#e0703a"]];
 function bandsCard(st) {
   const n = st.scores.length; if (!n) return "";
   const b = BANDS.map(([l, a, z, c]) => ({ l, c, k: st.scores.filter(x => x >= a && x <= z).length }));
@@ -892,11 +975,11 @@ function statsOverview(st, p) {
   const [da, ca] = delta(st.avg, pr && pr.visits ? pr.avg : null);
   const sess = st.sessList.filter(s => s.d >= 9).slice(-20).map(s => s.p / s.d * 3);
   return `<div class="tiles">
-    ${tile("3-dart average", st.avg == null ? "–" : f1(st.avg), da, ca)}
+    ${tile("3-dart average", st.avg == null ? "–" : f1(st.avg), da, ca, "hero")}
     ${tile("First 9 average", st.f9 == null ? "–" : f1(st.f9), st.f9 != null && st.avg != null ? `${f1(Math.abs(st.f9 - st.avg))} ${st.f9 >= st.avg ? "above" : "below"} your average` : "")}
-    ${tile("Checkout", st.dd ? pct(st.outs, st.dd) : "–", st.dd ? `${st.outs} of ${st.dd} darts at a double` : "no shots at a double yet")}
+    ${tile("Checkout", st.dd ? pct(st.outs, st.dd) : "–", st.dd ? `${st.outs} of ${st.dd} darts at a double` : "no shots at a double yet", "", "warm")}
     ${tile("Darts per leg", st.dpl == null ? "–" : f1(st.dpl), st.best ? `best ${st.best}` : "no finished legs yet")}</div>
-    <div class="card"><div class="between"><p class="h2">3-dart average by session</p><span class="small muted">dashed = period average</span></div>
+    <div class="card"><div class="between"><p class="h2">3-dart average by session</p><span class="small muted"><span style="color:var(--warm-dark)">dashed</span> = period average</span></div>
       <div style="margin-top:8px">${lineChart(sess, { mean: st.avg, label: "Average by session", need: "Shows once you have two sessions in this period." })}</div></div>
     ${bandsCard(st)}
     ${rangesCard(st)}
@@ -913,7 +996,7 @@ function statsScoring(st) {
   byV.forEach(b => b.t = b.v ? f1(b.v).replace(/\.0$/, "") : "");
   const median = n ? st.scores.slice().sort((a, b) => a - b)[Math.floor(n / 2)] : null;
   return `<div class="tiles">
-      ${tile("3-dart average", f1(st.avg))}${tile("First 9 average", st.f9 == null ? "–" : f1(st.f9))}
+      ${tile("3-dart average", f1(st.avg), "", "", "hero")}${tile("First 9 average", st.f9 == null ? "–" : f1(st.f9))}
       ${tile("Points per dart", f2(st.points / st.darts))}${tile("Median visit", median ?? "–", st.sd != null ? `spread (SD) ${f1(st.sd)}` : "")}</div>
     <div class="card"><p class="h2">Big visits</p><div class="trio" style="margin-top:10px">
       <div><span class="l">60+ visits</span><span class="v">${pct(st.s60, st.visits - st.busts)}</span></div><div><span class="l">100+ per leg</span><span class="v">${st.legs ? f2(st.s100 / st.legs) : "–"}</span></div><div><span class="l">180s</span><span class="v">${st.s180}</span></div></div>
@@ -933,39 +1016,38 @@ function statsFinishing(st) {
   const ldBins = [["≤15", 0, 15], ["16–18", 16, 18], ["19–21", 19, 21], ["22–24", 22, 24], ["25–30", 25, 30], ["31–40", 31, 40], ["41+", 41, 999]].map(([l, a, z]) => ({ l, v: st.legDarts.filter(x => x >= a && x <= z).length }));
   ldBins.forEach(b => b.t = b.v || "");
   return `<div class="tiles">
-      ${tile("Checkout", st.dd ? pct(st.outs, st.dd) : "–", st.dd ? `${st.outs} of ${st.dd} darts` : "")}
+      ${tile("Checkout", st.dd ? pct(st.outs, st.dd) : "–", st.dd ? `${st.outs} of ${st.dd} darts` : "", "", "hero")}
       ${tile("Darts at double per leg", st.outs ? f1(st.dd / st.outs) : "–", "to finish")}
       ${tile("Highest checkout", st.highOut ?? "–", st.outsVals.filter(x => x > 100).length ? `${st.outsVals.filter(x => x > 100).length} ton-plus finishes` : "")}
       ${tile("Darts per leg", st.dpl == null ? "–" : f1(st.dpl), finished ? `${finished} legs finished` : "")}</div>
     ${rangesCard(st)}
     <div class="card"><p class="h2">Doubles</p><p class="sub" style="margin-bottom:6px">From visits where you picked the darts</p>
       ${dbl.length ? `<table class="tbl"><tr><th>Double</th><th>Darts</th><th>Hit</th><th>Rate</th></tr>${dbl.map(([t, e]) => `<tr><td><b>${t === "Others" ? "Others" : segLabel(t)}</b></td><td class="muted">${e.att}</td><td class="muted">${e.hit}</td><td><b>${pct(e.hit, e.att)}</b></td></tr>`).join("")}</table>` : `<p class="empty" style="padding:12px">No darts at a double picked yet.</p>`}</div>
+    ${st.dblPos[0].att ? `<div class="card"><p class="h2">Doubles by dart in the visit</p><p class="sub" style="margin-bottom:6px">Hit rate when the 1st, 2nd or 3rd dart of a visit was at a double</p>
+      ${byDartTable([["Hit rate", c => pct(c.hit, c.att)], ["Hits", c => fmtN(c.hit)], ["Darts", c => fmtN(c.att)]], st.dblPos)}</div>` : ""}
     <div class="card"><p class="h2">Darts per finished leg</p><div style="margin-top:8px">${finished ? barChart(ldBins, { label: "Darts per leg histogram" }) : `<p class="empty" style="padding:12px">Finish a leg to see this.</p>`}</div></div>
     ${topOut.length ? `<div class="card"><p class="h2" style="margin-bottom:4px">Your checkouts</p>${topOut.map(([s, k]) => brow(String(s), k + "×", "", k / topOut[0][1] * 100)).join("")}</div>` : ""}
     <div class="card"><p class="h2" style="margin-bottom:4px">Busts</p>${kv("Busts", fmtN(st.busts))}${kv("Per finished leg", finished ? f2(st.busts / finished) : "–")}</div>`;
 }
+const segName = x => x === "M" ? "Miss" : x === "SB" ? "25" : x === "DB" ? "Bull" : ({ S: "Single ", D: "Double ", T: "Treble " }[x[0]]) + x.slice(1);
+function byDartTable(rows, cols) {
+  return `<table class="tbl"><tr><th></th>${cols.map((_, i) => `<th>Dart ${i + 1}</th>`).join("")}</tr>${rows.map(([l, f]) => `<tr><td class="muted">${l}</td>${cols.map(c => `<td><b>${c.n || c.att ? f(c) : "–"}</b></td>`).join("")}</tr>`).join("")}</table>`;
+}
 function statsAccuracy(st) {
-  const aims = [...st.aimDarts.entries()].map(([a, m]) => [a, m, sum([...m.values()])]).filter(x => x[2] >= 1).sort((a, b) => b[2] - a[2]);
-  if (!aims.length) return `<div class="card empty">Accuracy builds from the darts you pick after each visit. Pick the darts on a few visits and this fills in.</div>`;
-  let aim = S.stats.aim && aims.find(a => a[0] === S.stats.aim) ? S.stats.aim : aims[0][0];
-  const [, m, tot] = aims.find(a => a[0] === aim);
-  const g = s => m.get(s) || 0;
-  let zones;
-  if (aim === "SB" || aim === "DB") zones = [["Bull", g("DB")], ["25", g("SB")], ["Board", tot - g("DB") - g("SB") - g("M")], ["Miss", g("M")]];
-  else {
-    const n = segNum(aim), [l, r] = nbrs(n);
-    const tr = g("T" + n), si = g("S" + n), le = g("S" + l) + g("T" + l) + g("D" + l), ri = g("S" + r) + g("T" + r) + g("D" + r), hi = g("D" + n) + g("M");
-    zones = [["Treble " + n, tr], ["Single " + n, si], [l + " side", le], [r + " side", ri], ["D" + n + " / off", hi], ["Elsewhere", tot - tr - si - le - ri - hi]];
-  }
-  const mx = Math.max(...zones.map(z => z[1]), 1);
-  const trebles = aims.filter(a => a[0][0] === "T" && a[2] >= 10).map(([a, mm, t]) => [a, mm.get(a) || 0, t]);
-  return `<div class="card stack" style="gap:10px">
-      <p class="h2">Where darts land</p><div class="chips">${aims.slice(0, 4).map(([a]) => `<button class="chip${a === aim ? " on" : ""}" data-aim="${a}">${a === "SB" ? "Bull" : segLabel(a)}</button>`).join("")}</div>
-      <p class="sub" style="margin:0">${fmtN(tot)} darts aimed at ${aim === "SB" ? "the bull" : segLabel(aim)}, from the darts you picked (${pct(st.picked, st.visits)} of visits)</p>
-      ${boardHeat(m)}</div>
-    <div class="card"><p class="h2" style="margin-bottom:4px">Aiming at ${aim === "SB" ? "the bull" : segLabel(aim)}</p>${zones.map(([l, k]) => brow(l, fmtN(k), pct(k, tot), k / mx * 100, l.startsWith("Treble") || l === "Bull" ? "" : l.startsWith("Single") || l === "25" ? "#5f9478" : "#9cbca9")).join("")}
-      ${aim[0] === "T" ? (() => { const n = segNum(aim), [l, r] = nbrs(n), le = zones[2][1], ri = zones[3][1]; return `<p class="sub" style="margin-top:6px">${le + ri ? `Misses either side: ${pct(le, le + ri)} to the ${l}, ${pct(ri, le + ri)} to the ${r}.` : ""}</p>`; })() : ""}</div>
-    ${trebles.length ? `<div class="card"><p class="h2">Treble hit rate</p><p class="sub" style="margin-bottom:6px">Trebles you've aimed at 10 or more times</p><table class="tbl"><tr><th>Aim</th><th>Darts</th><th>Hit</th><th>Rate</th></tr>${trebles.map(([a, h, t]) => `<tr><td><b>${a}</b></td><td class="muted">${fmtN(t)}</td><td class="muted">${fmtN(h)}</td><td><b>${pct(h, t)}</b></td></tr>`).join("")}</table></div>` : ""}`;
+  if (!st.picked) return `<div class="card empty">Accuracy builds from the darts you pick after each visit. Pick the darts on a few visits and this fills in.</div>`;
+  const F = [["scoring", "Scoring"], ["finishing", "170 and below"], ["dbl", "At a double"], ["all", "All"]];
+  const f = S.stats.heat || "scoring", m = st.heat[f], tot = sum([...m.values()]);
+  const top = [...m.entries()].sort((a, b) => b[1] - a[1]).slice(0, 8);
+  const desc = { scoring: "Darts thrown with more than 170 left", finishing: "Darts thrown on 170 or less", dbl: "Darts thrown when you were on a finish", all: "Every dart you've picked" }[f];
+  const D = st.byDart, A = st.after;
+  return `<div class="card stack" style="gap:10px"><p class="h2">Where your darts land</p>
+      <div class="seg">${F.map(([k, l]) => `<button class="${k === f ? "on" : ""}" data-heat="${k}">${l}</button>`).join("")}</div>
+      <p class="sub" style="margin:0">${desc} · ${fmtN(tot)} darts, from the darts you picked (${pct(st.picked, st.visits)} of visits)</p>
+      ${tot ? boardHeat(m) : `<p class="empty">No darts here yet.</p>`}</div>
+    ${tot ? `<div class="card"><p class="h2" style="margin-bottom:4px">Most hit</p>${top.map(([x, k]) => `<div class="brow"><span class="lab">${segName(x)}</span><div class="bar warm"><i style="width:${k / top[0][1] * 100}%"></i></div><span class="n">${fmtN(k)}</span><span class="p">${pct(k, tot)}</span></div>`).join("")}</div>` : ""}
+    ${D[0].n ? `<div class="card"><p class="h2">By dart in the visit</p><p class="sub" style="margin-bottom:6px">Scoring darts only (more than 170 left)</p>
+      ${byDartTable([["Points per dart", c => f2(c.p / c.n)], ["Treble 20", c => pct(c.t20, c.n)], ["Any treble", c => pct(c.t, c.n)], ["20 bed (S, T or D20)", c => pct(c.b20, c.n)], ["Darts", c => fmtN(c.n)]], D)}
+      ${A.t.n >= 5 && A.o.n >= 5 ? `<p class="sub" style="margin-top:8px">After a T20, your next dart hits T20 ${pct(A.t.h, A.t.n)} of the time (${A.t.h} of ${A.t.n}), against ${pct(A.o.h, A.o.n)} after any other dart.</p>` : ""}</div>` : ""}`;
 }
 function statsProgress(st, p) {
   const all = statsFor("all");
@@ -1143,12 +1225,12 @@ document.addEventListener("click", e => {
   if (d.set) { const v = (d.set === "start" || d.set === "first") ? +d.val : d.val; S.set[d.set] = v; saveSettings(); render(); return; }
   if (d.quick) { if (cpuTurnNow()) return; S.input = d.quick; submitScore(); return; }
   if (d.stab) { S.stats.tab = d.stab; render(); return; }
-  if (d.aim) { S.stats.aim = d.aim; render(); return; }
+  if (d.heat) { S.stats.heat = d.heat; render(); return; }
   if (d.hsess) { S.hist.open = S.hist.open === d.hsess ? null : d.hsess; render(); return; }
   if (d.hleg) { openLeg(d.hleg); return; }
   const P = S.sheet;
-  if (d.popt != null && P) { P.sel = +d.popt; P.order = P.list[P.sel].darts.slice(); P.swap = null; drawPicker(); return; }
-  if (d.pslot != null && P) { const i = +d.pslot; if (P.swap == null) P.swap = i; else { if (P.swap !== i) [P.order[P.swap], P.order[i]] = [P.order[i], P.order[P.swap]]; P.swap = null; } drawPicker(); return; }
+  if (d.popt != null && P) { chooseCombo(+d.popt); return; }
+  if (d.pord != null && P) { tapOrder(+d.pord); return; }
   if (d.bmult && P) { P.b.mult = d.bmult; drawPicker(); return; }
   if ((d.bnum || d.bseg) && P) { if (P.b.darts.length >= 3) { toast("Three darts already: tap a dart to clear it"); return; } const s = d.bseg || ((d.bnum && P.b.mult) + d.bnum); P.b.darts.push(s); P.b.mult = "S"; drawPicker(); return; }
   if (d.bslot != null && P) { P.b.darts = P.b.darts.slice(0, +d.bslot); drawPicker(); return; }
@@ -1160,7 +1242,12 @@ document.addEventListener("click", e => {
   else if (a === "m-start" || a === "m-rematch") { closeSheet(); startMatch(); }
   else if (a === "m-next") { if (matchOver(M())) return; const l = activeLeg(); if (l && l.m) { closeSheet(); S.tab = "play"; render(); } else startMatchLeg(); }
   else if (a === "m-end") { const l = activeLeg(); if (l && l.m) { l.end = true; persist([l]); } S.meta.match = null; S.meta.active = null; saveMeta(); closeSheet(); render(); }
-  else if (a === "aim") { const opts = ["T20", "T19", "T18", "SB"]; S.set.aim = opts[(opts.indexOf(S.set.aim) + 1) % opts.length]; saveSettings(); render(); toast(`Aiming at ${S.set.aim === "SB" ? "the bull" : S.set.aim}`); }
+  else if (a === "checkout") { const l = activeLeg(); if (!l || cpuTurnNow()) return; S.input = String(legRem(l)); submitScore(); }
+  else if (a === "bust") {
+    const l = activeLeg(); if (!l || cpuTurnNow()) return; S.input = "";
+    const draft = { s: 0, r: legRem(l), t: Date.now(), b: true };
+    if (S.set.ask === "never") askOrSave(l, draft, false); else openBust(l, draft);
+  }
   else if (a === "leg-menu") {
     S.sheet = { kind: "menu" };
     openSheet(`<div class="stack"><p class="sheet-title">This leg</p>${M() && activeLeg() && activeLeg().m ? `<button class="btn ghost" data-act="m-end">End the match</button>` : `<button class="btn ghost" data-act="abandon">Stop this leg (keep its visits)</button>`}<button class="btn ghost danger" data-act="discard">Discard this leg</button><button class="btn" data-act="close">Cancel</button></div>`);
@@ -1168,11 +1255,11 @@ document.addEventListener("click", e => {
   else if (a === "abandon") { S.meta.active = null; saveMeta(); closeSheet(); render(); toast("Leg stopped. It stays in your history."); }
   else if (a === "discard") { const l = activeLeg(); if (l) { l.del = true; persist([l]); if (l.m && M()) S.meta.match = null; } S.meta.active = null; saveMeta(); closeSheet(); render(); toast("Leg discarded"); }
   else if (a === "close") closeSheet();
-  else if (a === "p-build") { P.build = true; P.b = { mult: "S", darts: [] }; drawPicker(); }
-  else if (a === "b-back") { P.build = false; drawPicker(); }
+  else if (a === "p-build") { P.step = "build"; P.b = { mult: "S", darts: [] }; drawPicker(); }
+  else if (a === "b-back" || a === "p-back") { P.step = "list"; drawPicker(); }
+  else if (a === "p-reset") { P.left = P.combo.slice(); P.order = []; drawPicker(); }
   else if (a === "b-clear") { P.b.darts = []; drawPicker(); }
-  else if (a === "b-save") { if (!buildOk()) return; P.v.d = P.b.darts.slice(); askOrSave(leg, P.v, true); }
-  else if (a === "p-save") { const sel = P.list[P.sel]; if (!sel) return; P.v.d = P.order.slice(); askOrSave(leg, P.v, true); }
+  else if (a === "b-save") { if (!buildOk()) return; P.v.d = P.b.darts.slice(); if (P.bust) P.v.s = sum(P.v.d.map(x => VAL[x])); askOrSave(leg, P.v, true); }
   else if (a === "p-skip") askOrSave(leg, P.v, false);
   else if (a === "q-save") { const v = P.v; if (v.f && !v.d) v.du = P.du; v.dd = P.dd; saveVisit(leg, v); }
   else if (a === "undo-out") { const l = S.legs.get(P.leg); l.v.pop(); l.done = false; delete l.fin; if (l.m && M() && l.m.res === "won") { M().me--; delete l.m.res; M().turn = "me"; } S.meta.active = l.id; saveMeta(); persist([l]); closeSheet(); S.tab = "play"; render(); }
