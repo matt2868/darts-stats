@@ -1,0 +1,984 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f5f5f2">
+<title>Darts Stats</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f5f5f2; --card:#ffffff; --line:#e3e3de; --line2:#efefeb; --ink:#17191c; --muted:#5c6067; --faint:#a3a6ab;
+  --acc:#1f6f4a; --acc-soft:#e6f0ea; --acc-mid:#5f9478; --red:#b42318; --red-soft:#fbeae8;
+  --nav-h:62px; --safe-b:env(safe-area-inset-bottom, 0px);
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--ink);font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;font-variant-numeric:tabular-nums;-webkit-tap-highlight-color:transparent;-webkit-font-smoothing:antialiased}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+#app{max-width:560px;margin:0 auto;min-height:100%;padding:14px 16px calc(var(--nav-h) + var(--safe-b) + 16px)}
+#app.play{height:100%;min-height:0;display:flex;flex-direction:column;gap:10px;padding-bottom:calc(var(--nav-h) + var(--safe-b) + 10px)}
+h1{font-size:26px;font-weight:700;margin:2px 0 12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px}
+.stack{display:flex;flex-direction:column;gap:12px}
+.row{display:flex;gap:8px;align-items:center}
+.between{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.muted{color:var(--muted)} .small{font-size:12px} .s13{font-size:13px}
+.h2{font-size:15px;font-weight:600;margin:0}
+.sub{font-size:12px;color:var(--muted);margin:2px 0 0}
+.btn{border:1px solid var(--line);background:var(--card);border-radius:12px;min-height:46px;padding:0 16px;font-size:15px;font-weight:500}
+.btn.primary{background:var(--acc);border-color:var(--acc);color:#fff;font-weight:600}
+.btn.ghost{background:var(--bg)}
+.btn.danger{color:var(--red)}
+.btn:disabled{opacity:.45;cursor:default}
+.grow{flex:1}
+.chip{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:7px 12px;font-size:13px;font-weight:500;white-space:nowrap}
+.chip.on{background:var(--acc);border-color:var(--acc);color:#fff}
+.seg{display:flex;gap:4px;background:#ebebe6;border-radius:10px;padding:3px;overflow-x:auto;scrollbar-width:none}
+.seg::-webkit-scrollbar{display:none}
+.seg button{flex:1;border:0;background:transparent;border-radius:8px;padding:8px 8px;font-size:13px;font-weight:500;white-space:nowrap}
+.seg button.on{background:#fff;font-weight:600;box-shadow:0 1px 2px rgba(0,0,0,.06)}
+.tiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.tile{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.tile .l{font-size:13px;color:var(--muted)}
+.tile .v{font-size:28px;font-weight:700;letter-spacing:-.02em}
+.tile .s{font-size:12px;color:var(--muted)}
+.tile .s.up{color:var(--acc)} .tile .s.down{color:var(--red)}
+.kv{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--line2);font-size:14px;gap:10px}
+.kv:last-child{border-bottom:0}
+.kv span:first-child{color:var(--muted)}
+.kv b{font-weight:600}
+.trio{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.trio div{display:flex;flex-direction:column;gap:2px;min-width:0}
+.trio .l{font-size:12px;color:var(--muted)} .trio .v{font-size:17px;font-weight:600}
+.bar{flex:1;height:8px;background:var(--line2);border-radius:4px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--acc)}
+.brow{display:flex;align-items:center;gap:10px;font-size:14px;padding:5px 0}
+.brow .lab{width:84px;flex-shrink:0}
+.brow .n{color:var(--muted);width:52px;text-align:right;flex-shrink:0}
+.brow .p{font-weight:600;width:46px;text-align:right;flex-shrink:0}
+.stackbar{display:flex;height:14px;border-radius:4px;overflow:hidden;gap:2px}
+.dot{width:10px;height:10px;border-radius:3px;flex-shrink:0}
+.tbl{width:100%;border-collapse:collapse;font-size:14px}
+.tbl th{font-size:12px;color:var(--muted);font-weight:500;text-align:right;padding:0 0 6px;border-bottom:1px solid var(--line2)}
+.tbl th:first-child,.tbl td:first-child{text-align:left}
+.tbl td{text-align:right;padding:7px 0;border-bottom:1px solid var(--line2)}
+.tbl tr:last-child td{border-bottom:0}
+.empty{padding:28px 14px;text-align:center;color:var(--muted);font-size:14px;line-height:1.5}
+svg text{font-family:Inter,system-ui,sans-serif}
+
+/* play */
+.p-head{display:flex;justify-content:space-between;align-items:center;min-height:34px}
+.p-head .t{font-size:15px;font-weight:600}
+.rem{display:flex;justify-content:space-between;align-items:flex-end;gap:8px}
+.rem .big{font-size:72px;font-weight:700;line-height:1;letter-spacing:-.03em}
+.route{display:flex;gap:6px;padding-bottom:6px;flex-wrap:wrap;justify-content:flex-end}
+.route span{font-size:14px;font-weight:600;color:var(--acc);background:var(--acc-soft);border-radius:8px;padding:5px 8px}
+.visits{padding:2px 14px;overflow-y:auto;min-height:0;flex-shrink:1}
+.vrow{display:flex;align-items:center;gap:12px;padding:7px 0;border-bottom:1px solid var(--line2)}
+.vrow:last-child{border-bottom:0}
+.vrow .n{font-size:12px;color:var(--muted);width:16px}
+.vrow .s{font-size:17px;font-weight:600;width:40px}
+.vrow .d{font-size:13px;color:var(--muted);flex:1;min-width:0}
+.vrow .l{font-size:15px;color:var(--muted)}
+.vrow.bust .s{color:var(--red);text-decoration:line-through}
+.entry{display:flex;justify-content:space-between;align-items:center;padding:0 4px}
+.entry .v{font-size:36px;font-weight:700}
+.entry .v.ph{color:var(--faint)}
+.keypad{flex:1;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-auto-rows:minmax(48px,1fr);gap:8px;min-height:220px}
+.keypad button{border:1px solid var(--line);background:var(--card);border-radius:12px;font-size:24px;font-weight:500}
+.keypad button:active{background:var(--line2)}
+.keypad .fn{font-size:15px;color:var(--muted);background:var(--bg)}
+.keypad .go{font-size:15px;font-weight:600;background:var(--acc);border-color:var(--acc);color:#fff}
+
+/* nav */
+#nav{position:fixed;left:0;right:0;bottom:0;background:rgba(255,255,255,.96);backdrop-filter:blur(8px);border-top:1px solid var(--line);padding-bottom:var(--safe-b);z-index:20}
+#nav .in{max-width:560px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr);height:var(--nav-h)}
+#nav button{border:0;background:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:11px;font-weight:500;color:var(--muted)}
+#nav button.on{color:var(--acc);font-weight:600}
+#nav svg{width:22px;height:22px}
+
+/* sheet */
+#scrim{position:fixed;inset:0;background:rgba(23,25,28,.45);z-index:30;display:none}
+#sheet{position:fixed;left:0;right:0;bottom:0;z-index:31;display:none;max-height:92vh;overflow-y:auto;background:#fff;border-radius:22px 22px 0 0;padding:10px 18px calc(18px + var(--safe-b));max-width:560px;margin:0 auto}
+#sheet .grab{width:40px;height:4px;border-radius:2px;background:#d4d4ce;margin:0 auto 12px}
+.sheet-title{font-size:24px;font-weight:700;margin:2px 0 0}
+.opts{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.opt{display:flex;align-items:center;gap:12px;padding:12px 14px;border:0;border-bottom:1px solid var(--line2);background:#fff;text-align:left;width:100%}
+.opt:last-child{border-bottom:0}
+.opt.on{background:var(--acc-soft)}
+.opt .radio{width:18px;height:18px;border-radius:50%;border:2px solid var(--faint);flex-shrink:0}
+.opt.on .radio{border:5px solid var(--acc)}
+.darts{display:flex;gap:6px;flex:1;flex-wrap:wrap}
+.darts span{font-size:16px;font-weight:600;min-width:38px;text-align:center;background:var(--bg);border-radius:8px;padding:5px 6px}
+.opt.on .darts span{background:#fff}
+.slots{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.slot{display:flex;flex-direction:column;align-items:center;gap:3px;background:#fff;border:1.5px solid var(--line);border-radius:12px;padding:9px 0}
+.slot .l{font-size:12px;color:var(--muted)}
+.slot .v{font-size:23px;font-weight:700;min-height:28px}
+.slot.on{background:var(--acc-soft);border-color:var(--acc)}
+.slot.empty .v{color:var(--faint)}
+.numgrid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
+.numgrid button{min-height:44px;border:1px solid var(--line);background:#fff;border-radius:10px;font-size:16px;font-weight:500}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chips .chip{min-width:46px;min-height:40px}
+#toast{position:fixed;left:50%;bottom:calc(var(--nav-h) + var(--safe-b) + 14px);transform:translateX(-50%);background:var(--ink);color:#fff;font-size:14px;padding:10px 16px;border-radius:12px;z-index:40;opacity:0;pointer-events:none;transition:opacity .2s;max-width:90vw;text-align:center}
+#toast.on{opacity:1}
+input[type=text],input[type=password],select{width:100%;border:1px solid var(--line);border-radius:10px;padding:11px 12px;background:#fff;font-size:15px}
+label.f{display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--muted)}
+.sess{border:1px solid var(--line);background:#fff;border-radius:14px;overflow:hidden}
+.sess>button{width:100%;border:0;background:#fff;text-align:left;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;gap:10px}
+.leg{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 14px;border:0;border-top:1px solid var(--line2);background:#fff;width:100%;text-align:left;font-size:14px}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<nav id="nav"><div class="in">
+  <button data-tab="play"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/></svg>Play</button>
+  <button data-tab="stats"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Stats</button>
+  <button data-tab="history"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>History</button>
+  <button data-tab="more"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>More</button>
+</div></nav>
+<div id="scrim"></div>
+<div id="sheet" role="dialog" aria-modal="true"></div>
+<div id="toast" role="status"></div>
+<input type="file" id="importFile" accept="application/json,.json" hidden>
+<script>
+"use strict";
+const APP_VERSION = "1.0";
+/* ===================== helpers ===================== */
+const $ = (s, el = document) => el.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+const f1 = x => (Math.round(x * 10) / 10).toFixed(1);
+const f2 = x => (Math.round(x * 100) / 100).toFixed(2);
+const pct = (a, b) => b ? f1(a / b * 100) + "%" : "–";
+const sum = a => a.reduce((x, y) => x + y, 0);
+const fmtN = n => Number(n).toLocaleString("en-GB");
+const DAY = 864e5;
+const fmtDate = t => new Date(t).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" });
+const fmtDateY = t => new Date(t).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+const fmtTime = t => new Date(t).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+let toastT;
+function toast(msg) { const t = $("#toast"); t.textContent = msg; t.classList.add("on"); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove("on"), 2400); }
+const buzz = ms => { try { navigator.vibrate && navigator.vibrate(ms); } catch (e) {} };
+
+/* ===================== the board ===================== */
+const ORDER = [20, 1, 18, 4, 13, 6, 10, 15, 2, 17, 3, 19, 7, 16, 8, 11, 14, 9, 12, 5];
+const ALL = []; for (let n = 1; n <= 20; n++) ALL.push("S" + n, "D" + n, "T" + n); ALL.push("SB", "DB", "M");
+const IDX = Object.fromEntries(ALL.map((s, i) => [s, i]));
+const segVal = s => s === "M" ? 0 : s === "SB" ? 25 : s === "DB" ? 50 : ({ S: 1, D: 2, T: 3 }[s[0]]) * +s.slice(1);
+const VAL = Object.fromEntries(ALL.map(s => [s, segVal(s)]));
+const segNum = s => (s === "SB" || s === "DB") ? 25 : s === "M" ? 0 : +s.slice(1);
+const isDbl = s => s[0] === "D";
+const segLabel = s => s === "M" ? "Miss" : s === "SB" ? "25" : s === "DB" ? "Bull" : s[0] === "S" ? s.slice(1) : s;
+const nbrs = n => { const i = ORDER.indexOf(n); return [ORDER[(i + 19) % 20], ORDER[(i + 1) % 20]]; };   // [left, right] as you look at the board
+const IMPOSSIBLE = new Set([163, 166, 169, 172, 173, 175, 176, 178, 179]);
+const finishTarget = r => r === 50 ? "DB" : (r >= 2 && r <= 40 && r % 2 === 0) ? "D" + r / 2 : null;
+
+/** Where darts tend to land when aimed at a target: used only to rank the suggested combinations. */
+const DIST = new Map();
+function aimDist(aim) {
+  if (DIST.has(aim)) return DIST.get(aim);
+  const d = new Map(), add = (s, p) => d.set(s, (d.get(s) || 0) + p);
+  if (aim === "SB" || aim === "DB") { add("SB", .28); add("DB", aim === "DB" ? .12 : .08); ORDER.forEach(n => add("S" + n, .026)); add("M", .06); }
+  else {
+    const k = aim[0], n = +aim.slice(1), [l, r] = nbrs(n), [ll] = nbrs(l), [, rr] = nbrs(r);
+    if (k === "T") { add("S" + n, .42); add("T" + n, .13); add("S" + l, .12); add("S" + r, .12); add("T" + l, .035); add("T" + r, .035); add("D" + n, .02); add("S" + ll, .025); add("S" + rr, .025); add("M", .02); }
+    else if (k === "D") { add("D" + n, .25); add("S" + n, .3); add("M", .22); add("D" + l, .05); add("D" + r, .05); add("S" + l, .05); add("S" + r, .05); }
+    else { add("S" + n, .7); add("T" + n, .06); add("D" + n, .03); add("S" + l, .08); add("S" + r, .08); add("T" + l, .01); add("T" + r, .01); add("M", .01); }
+  }
+  DIST.set(aim, d); return d;
+}
+const FLOOR = 0.0012;
+
+/* checkout routes */
+const DBL_PREF = { D20: 0, D16: .4, D8: .8, D10: .9, D18: 1.1, D12: 1.2, D4: 1.4, D6: 1.6, D14: 1.7, D2: 2, DB: 2.4 };
+function setupCost(s) {
+  if (s === "M") return 99;
+  if (s[0] === "T") { const n = +s.slice(1); return n === 20 ? 0 : n === 19 ? .2 : n === 18 ? .4 : n === 17 ? .5 : n >= 15 ? .6 : 1; }
+  if (s === "SB") return 1.6; if (s === "DB") return 2.2;
+  if (s[0] === "S") return s === "S20" ? .3 : .5;
+  return 1.8;   // doubles as setup darts
+}
+const ROUTE = new Map();
+function route(rem, darts, out = "double") {
+  const key = rem + "|" + darts + "|" + out;
+  if (ROUTE.has(key)) return ROUTE.get(key);
+  let best = null, bc = Infinity;
+  const segs = ALL.filter(s => s !== "M");
+  const finals = out === "double" ? segs.filter(isDbl) : segs;
+  for (let n = 1; n <= darts && !best; n++) {
+    const rec = (pre, r) => {
+      if (pre.length === n - 1) {
+        for (const f of finals) if (VAL[f] === r) {
+          const c = (out === "double" ? (DBL_PREF[f] ?? 3) : (f[0] === "T" ? 0 : f[0] === "S" ? .3 : 1)) + sum(pre.map(setupCost)) - (pre.length ? VAL[pre[0]] * 1e-4 : 0);   // ties: bigger dart first
+          if (c < bc) { bc = c; best = [...pre, f]; }
+        }
+        return;
+      }
+      for (const s of segs) { const r2 = r - VAL[s]; if (r2 >= (out === "double" ? 2 : 1)) rec([...pre, s], r2); }
+    };
+    rec([], rem);
+  }
+  ROUTE.set(key, best); return best;
+}
+const canFinish = (rem, out) => out === "double" ? (rem <= 170 && !!route(rem, 3, out)) : rem <= 180 && !!route(rem, 3, out);
+function aimFor(rem, left, visitAim, out) {
+  if (rem <= 170 && rem <= left * 60) { const r = route(rem, left, out); if (r) return r[0]; }
+  return visitAim;
+}
+
+/* combination suggestions */
+let COMBOS = null;
+function combosOfLen(n) {
+  if (!COMBOS) COMBOS = [null, new Map(), new Map(), new Map()];
+  const M = COMBOS[n]; if (M.size) return M;
+  const L = ALL.length, put = (arr) => { const t = sum(arr.map(s => VAL[s])); if (!M.has(t)) M.set(t, []); M.get(t).push(arr); };
+  if (n === 1) for (let i = 0; i < L; i++) put([ALL[i]]);
+  if (n === 2) for (let i = 0; i < L; i++) for (let j = i; j < L; j++) put([ALL[i], ALL[j]]);
+  if (n === 3) for (let i = 0; i < L; i++) for (let j = i; j < L; j++) for (let k = j; k < L; k++) put([ALL[i], ALL[j], ALL[k]]);
+  return M;
+}
+function perms(a) {
+  if (a.length <= 1) return [a.slice()];
+  const out = [], seen = new Set();
+  a.forEach((x, i) => { if (seen.has(x)) return; seen.add(x); perms(a.filter((_, j) => j !== i)).forEach(p => out.push([x, ...p])); });
+  return out;
+}
+const comboKey = a => a.slice().sort((x, y) => IDX[x] - IDX[y]).join(",");
+/** Ordered darts are valid for this visit? Finishing visits must end on the finish (a double for double out) and not reach it early. */
+function validSeq(seq, rem, finishing, out) {
+  let r = rem;
+  for (let i = 0; i < seq.length; i++) {
+    r -= VAL[seq[i]];
+    if (i < seq.length - 1 && finishing && r <= (out === "double" ? 1 : 0)) return false;
+    if (seq[i] === "M" && finishing && i === seq.length - 1) return false;
+  }
+  if (finishing) return r === 0 && (out !== "double" || isDbl(seq[seq.length - 1]));
+  return true;
+}
+function seqProb(seq, rem, aim, out) {
+  let r = rem, p = 1;
+  seq.forEach((s, i) => { const a = aimFor(r, 3 - i, aim, out); p *= (aimDist(a).get(s) || FLOOR); r -= VAL[s]; });
+  return p;
+}
+function suggest(score, rem, aim, out, finishing) {
+  const H = pickHistory(), res = [];
+  const lens = finishing ? [1, 2, 3] : [3];
+  for (const n of lens) for (const c of (combosOfLen(n).get(score) || [])) {
+    if (finishing && c.includes("M") && n < 3) continue;
+    let tot = 0, best = null, bp = -1;
+    for (const p of perms(c.slice().sort((x, y) => VAL[y] - VAL[x]))) { if (!validSeq(p, rem, finishing, out)) continue; const pr = seqProb(p, rem, aim, out); tot += pr; if (pr > bp * (1 + 1e-9)) { bp = pr; best = p; } }
+    if (!best) continue;
+    const key = comboKey(c), used = H.count.get(score + "|" + key) || 0;
+    let order = best;
+    const prev = H.order.get(key); if (prev && validSeq(prev, rem, finishing, out)) order = prev.slice();
+    res.push({ key, darts: order, w: tot * (1 + 6 * used), used });
+  }
+  res.sort((a, b) => b.w - a.w);
+  return res.filter((r, i) => i < 3 || r.used || r.w >= res[0].w * 0.005).slice(0, 5);
+}
+
+/* ===================== state & storage ===================== */
+const LS_LEGS = "darts.legs.v1", LS_SET = "darts.settings.v1", LS_META = "darts.meta.v1", LS_GH = "darts.gh.v1";
+const S = {
+  legs: new Map(),
+  set: { start: 501, out: "double", aim: "T20", ask: "always" },
+  meta: { active: null, sid: null, sLast: 0 },
+  tab: "play", input: "",
+  stats: { period: "30", tab: "overview", aim: null },
+  hist: { open: null },
+  sheet: null,
+};
+let idb = null;
+function openIDB() {
+  return new Promise((res, rej) => {
+    if (!("indexedDB" in window)) return rej(new Error("no idb"));
+    const r = indexedDB.open("darts-stats", 1);
+    r.onupgradeneeded = () => { r.result.createObjectStore("legs", { keyPath: "id" }); };
+    r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error);
+  });
+}
+const idbAll = () => new Promise((res, rej) => { const q = idb.transaction("legs").objectStore("legs").getAll(); q.onsuccess = () => res(q.result || []); q.onerror = () => rej(q.error); });
+const idbPut = legs => new Promise((res, rej) => { const tx = idb.transaction("legs", "readwrite"); legs.forEach(l => tx.objectStore("legs").put(l)); tx.oncomplete = res; tx.onerror = () => rej(tx.error); });
+let mirrorT;
+function writeMirror() { clearTimeout(mirrorT); mirrorT = setTimeout(() => { try { localStorage.setItem(LS_LEGS, JSON.stringify([...S.legs.values()])); } catch (e) {} }, 300); }
+function saveSettings() { try { localStorage.setItem(LS_SET, JSON.stringify(S.set)); } catch (e) {} }
+function saveMeta() { try { localStorage.setItem(LS_META, JSON.stringify(S.meta)); } catch (e) {} }
+function persist(legs) {
+  legs.forEach(l => { l.u = Date.now(); S.legs.set(l.id, l); });
+  HISTORY = null; STATCACHE.clear();
+  if (idb) idbPut(legs).catch(() => {});
+  writeMirror(); scheduleGh();
+}
+/** Merge legs in, keeping whichever copy of each was changed most recently. Returns the ones that changed here. */
+function mergeLegs(list) {
+  const ch = [];
+  for (const l of list || []) { if (!l || !l.id) continue; const cur = S.legs.get(l.id); if (!cur || (Number(l.u) || 0) > (Number(cur.u) || 0)) { S.legs.set(l.id, l); ch.push(l); } }
+  if (ch.length) { HISTORY = null; STATCACHE.clear(); }
+  return ch;
+}
+const liveLegs = () => [...S.legs.values()].filter(l => !l.del);
+const activeLeg = () => { const l = S.meta.active && S.legs.get(S.meta.active); return l && !l.del && !l.done ? l : null; };
+
+/* past picks: which darts you usually choose for a score, and in which order */
+let HISTORY = null;
+function pickHistory() {
+  if (HISTORY) return HISTORY;
+  const count = new Map(), order = new Map();
+  liveLegs().sort((a, b) => a.at - b.at).forEach(l => l.v.forEach(v => { if (!v.d || !v.d.length) return; const k = comboKey(v.d); count.set(v.s + "|" + k, (count.get(v.s + "|" + k) || 0) + 1); order.set(k, v.d); }));
+  return (HISTORY = { count, order });
+}
+
+/* ===================== leg maths ===================== */
+const scored = v => v.b ? 0 : v.s;
+const dartsOf = v => v.du || 3;
+const legRem = l => l.st - sum(l.v.map(scored));
+const legDarts = l => sum(l.v.map(dartsOf));
+/** Darts thrown at a finishing double during this visit (known from the darts if picked, otherwise from your answer). */
+function doubleInfo(v, out) {
+  if (v.d && v.d.length && out === "double") {
+    let r = v.r, att = 0; const per = [];
+    for (const s of v.d) { const t = finishTarget(r); if (t) { att++; per.push({ t, hit: s === t }); } r -= VAL[s]; if (r <= 1 && r !== 0) break; if (r === 0) break; }
+    return { att, per };
+  }
+  return { att: v.dd || 0, per: null };
+}
+
+/* ===================== sessions ===================== */
+function ensureSession() {
+  const now = Date.now();
+  if (!S.meta.sid || now - (S.meta.sLast || 0) > 3 * 3600e3) { S.meta.sid = uid(); }
+  S.meta.sLast = now; saveMeta();
+  return S.meta.sid;
+}
+function startLeg() {
+  const sid = ensureSession();
+  const n = liveLegs().filter(l => l.sid === sid).length + 1;
+  const leg = { id: uid(), sid, n, st: S.set.start, out: S.set.out, at: Date.now(), v: [], done: false };
+  persist([leg]); S.meta.active = leg.id; saveMeta(); S.input = ""; render();
+}
+function endSession() { S.meta.active = null; S.meta.sid = null; saveMeta(); closeSheet(); render(); toast("Session ended"); }
+
+/* ===================== rendering ===================== */
+function render() {
+  document.querySelectorAll("#nav button").forEach(b => b.classList.toggle("on", b.dataset.tab === S.tab));
+  const app = $("#app");
+  app.className = S.tab === "play" && activeLeg() ? "play" : "";
+  app.innerHTML = S.tab === "play" ? viewPlay() : S.tab === "stats" ? viewStats() : S.tab === "history" ? viewHistory() : viewMore();
+  if (S.tab === "play") { const vs = $(".visits"); if (vs) vs.scrollTop = vs.scrollHeight; }
+  wake();
+}
+
+/* ---------- play ---------- */
+function sessionLegs(sid) { return liveLegs().filter(l => l.sid === sid); }
+function avgOf(legs) { let p = 0, d = 0; legs.forEach(l => l.v.forEach(v => { p += scored(v); d += dartsOf(v); })); return d ? p / d * 3 : null; }
+function viewPlay() {
+  const leg = activeLeg();
+  if (!leg) return viewSetup();
+  const rem = legRem(leg), rt = rem <= (leg.out === "straight" ? 180 : 170) ? route(rem, 3, leg.out) : null;
+  const sAvg = avgOf(sessionLegs(leg.sid)), lAvg = avgOf([leg]);
+  const visits = leg.v.map((v, i) => {
+    const left = leg.st - sum(leg.v.slice(0, i + 1).map(scored));
+    return `<div class="vrow${v.b ? " bust" : ""}"><span class="n">${i + 1}</span><span class="s">${v.s}</span><span class="d">${v.b ? "Bust" : v.d ? v.d.map(segLabel).join(" · ") : ""}</span><span class="l">${left}</span></div>`;
+  }).join("");
+  return `
+  <div class="p-head"><span class="t">${leg.st} · Leg ${leg.n}</span>
+    <div class="row"><button class="chip" data-act="aim">Aim ${segLabel(S.set.aim)}</button><button class="chip" data-act="leg-menu" aria-label="Leg options">•••</button></div></div>
+  <div class="card stack" style="gap:12px;padding:14px 18px">
+    <div class="rem"><div style="display:flex;flex-direction:column"><span class="s13 muted">Remaining</span><span class="big">${rem}</span></div>
+      <div class="route">${rt ? rt.map(s => `<span>${segLabel(s)}</span>`).join("") : rem <= 170 && leg.out === "double" ? `<span style="color:var(--muted);background:var(--bg)">No finish</span>` : ""}</div></div>
+    <div class="trio" style="border-top:1px solid var(--line);padding-top:10px">
+      <div><span class="l">Darts</span><span class="v">${legDarts(leg)}</span></div>
+      <div><span class="l">Leg avg</span><span class="v">${lAvg == null ? "–" : f1(lAvg)}</span></div>
+      <div><span class="l">Session avg</span><span class="v">${sAvg == null ? "–" : f1(sAvg)}</span></div></div>
+  </div>
+  ${leg.v.length ? `<div class="card visits">${visits}</div>` : ""}
+  <div class="entry"><span class="s13 muted">Visit ${leg.v.length + 1}</span><span class="v${S.input ? "" : " ph"}" id="entry">${S.input || "0"}</span></div>
+  <div class="keypad">
+    ${[1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => `<button data-key="${n}">${n}</button>`).join("")}
+    <button class="fn" data-key="back" id="backkey">${S.input ? "Delete" : "Undo"}</button><button data-key="0">0</button><button class="go" data-key="next">Next</button>
+  </div>`;
+}
+function viewSetup() {
+  const sid = S.meta.sid && Date.now() - (S.meta.sLast || 0) < 3 * 3600e3 ? S.meta.sid : null;
+  const sl = sid ? sessionLegs(sid) : [];
+  const opt = (k, v, lab) => `<button class="chip${S.set[k] === v ? " on" : ""}" data-set="${k}" data-val="${v}">${lab}</button>`;
+  return `<h1>Play</h1>
+  <div class="stack">
+    <div class="card stack">
+      <div><p class="h2">Starting score</p><div class="chips" style="margin-top:8px">${[301, 501, 701].map(n => opt("start", n, n)).join("")}</div></div>
+      <div><p class="h2">Finish</p><div class="chips" style="margin-top:8px">${opt("out", "double", "Double out")}${opt("out", "straight", "Straight out")}</div></div>
+      <div><p class="h2">Aiming at</p><div class="chips" style="margin-top:8px">${["T20", "T19", "T18", "SB"].map(a => opt("aim", a, segLabel(a) === "25" ? "Bull" : a)).join("")}</div><p class="sub">Used to suggest which darts made up each score. You can change it mid-leg.</p></div>
+      <button class="btn primary" data-act="start">${sl.length ? "Next leg" : "Start practice"}</button>
+    </div>
+    ${sl.length ? `<div class="card"><div class="between"><p class="h2">This session</p><button class="chip" data-act="end-session">End session</button></div>
+      <div class="trio" style="margin-top:10px"><div><span class="l">Legs</span><span class="v">${sl.length}</span></div><div><span class="l">Average</span><span class="v">${f1(avgOf(sl) || 0)}</span></div><div><span class="l">Best leg</span><span class="v">${(() => { const d = sl.filter(l => l.done).map(legDarts); return d.length ? Math.min(...d) + " darts" : "–"; })()}</span></div></div></div>` : ""}
+  </div>`;
+}
+
+/* keypad */
+function onKey(k) {
+  const leg = activeLeg(); if (!leg) return;
+  if (k === "back") {
+    if (S.input) S.input = S.input.slice(0, -1);
+    else if (leg.v.length) { const v = leg.v.pop(); persist([leg]); toast(`Removed visit of ${v.s}`); render(); return; }
+    else { toast("Nothing to undo"); return; }
+  } else if (k === "next") { submitScore(); return; }
+  else { if (S.input.length >= 3 || (S.input === "0")) S.input = S.input === "0" ? k : S.input; else S.input += k; if (+S.input > 180) { S.input = S.input.slice(0, -1); toast("A visit can't score more than 180"); } }
+  const e = $("#entry"); if (e) { e.textContent = S.input || "0"; e.classList.toggle("ph", !S.input); }
+  const b = $("#backkey"); if (b) b.textContent = S.input ? "Delete" : "Undo";
+}
+function submitScore() {
+  const leg = activeLeg(); if (!leg) return;
+  const s = +(S.input || 0);
+  if (IMPOSSIBLE.has(s)) { toast(`${s} can't be scored with three darts`); return; }
+  const rem = legRem(leg), after = rem - s, out = leg.out;
+  const finishing = after === 0 && canFinish(rem, out);
+  const bust = after < 0 || (out === "double" && (after === 1 || (after === 0 && !finishing)));
+  const draft = { s, r: rem, a: S.set.aim, t: Date.now(), b: bust || undefined, f: finishing || undefined };
+  S.input = "";
+  const needDarts = S.set.ask === "always" || (S.set.ask === "finishes" && rem <= 170);
+  if (needDarts && (s > 0 || finishing)) openPicker(leg, draft);
+  else if (s === 0 && !finishing) { draft.d = ["M", "M", "M"]; askOrSave(leg, draft, true); }
+  else askOrSave(leg, draft, false);
+}
+/** After the darts are chosen (or skipped), ask what still can't be worked out, then save. */
+function needsDoubleQ(leg, v) {
+  if (leg.out !== "double") return false;
+  if (v.d && v.d.length) return false;
+  return v.f || (v.r <= 170 && canFinish(v.r, "double"));
+}
+function askOrSave(leg, v, picked) {
+  if (!picked) delete v.d;
+  if (v.f && v.d && v.d.length) v.du = v.d.length;
+  if (needsDoubleQ(leg, v) || (v.f && !v.du)) { openQuestions(leg, v); return; }
+  saveVisit(leg, v);
+}
+function saveVisit(leg, v) {
+  Object.keys(v).forEach(k => v[k] === undefined && delete v[k]);
+  leg.v.push(v); buzz(12);
+  if (v.f) { leg.done = true; leg.fin = Date.now(); S.meta.active = null; S.meta.sLast = Date.now(); saveMeta(); persist([leg]); render(); openSummary(leg); return; }
+  S.meta.sLast = Date.now(); saveMeta(); persist([leg]); closeSheet(); render();
+}
+
+/* ---------- sheets ---------- */
+function openSheet(html) { const sh = $("#sheet"); sh.innerHTML = `<div class="grab"></div>` + html; sh.style.display = "block"; $("#scrim").style.display = "block"; sh.scrollTop = 0; }
+function closeSheet() { $("#sheet").style.display = "none"; $("#scrim").style.display = "none"; S.sheet = null; }
+function openPicker(leg, draft) {
+  const out = leg.out, list = suggest(draft.s, draft.r, draft.a, out, !!draft.f);
+  S.sheet = { kind: "pick", leg: leg.id, v: draft, list, sel: list.length ? 0 : -1, order: list.length ? list[0].darts.slice() : [], swap: null, build: !list.length, b: { mult: "S", darts: [] } };
+  drawPicker();
+}
+function drawPicker() {
+  const P = S.sheet, v = P.v, leg = S.legs.get(P.leg), after = v.r - v.s;
+  const head = v.f ? `Checkout · ${v.s}` : v.b ? `Bust · ${v.s} thrown` : `Visit ${leg.v.length + 1} · leaves ${after}`;
+  let body;
+  if (P.build) {
+    const B = P.b, tot = sum(B.darts.map(s => VAL[s])), need = v.s - tot;
+    const nums = Array.from({ length: 20 }, (_, i) => i + 1).map(n => `<button data-bnum="${n}">${n}</button>`).join("");
+    const ok = buildOk();
+    body = `
+    <div class="slots">${[0, 1, 2].map(i => `<button class="slot${B.darts[i] ? "" : " empty"}${i === B.darts.length ? " on" : ""}" data-bslot="${i}"><span class="l">Dart ${i + 1}</span><span class="v">${B.darts[i] ? segLabel(B.darts[i]) : "–"}</span></button>`).join("")}</div>
+    <div class="between"><div class="seg" style="flex:1">${["S", "D", "T"].map(m => `<button class="${B.mult === m ? "on" : ""}" data-bmult="${m}">${m === "S" ? "Single" : m === "D" ? "Double" : "Treble"}</button>`).join("")}</div></div>
+    <div class="numgrid">${nums}<button data-bseg="SB">25</button><button data-bseg="DB">Bull</button><button data-bseg="M" style="grid-column:span 3">Miss</button></div>
+    <p class="sub" style="margin:0">${B.darts.length ? `Total ${tot}${need > 0 ? ` · ${need} still to place` : need < 0 ? ` · ${-need} too many` : " ✓"}` : `Tap the darts in the order you threw them.`}${v.f && leg.out === "double" ? " The last dart must be a double." : ""}</p>
+    <div class="row"><button class="btn ghost grow" data-act="b-clear">Clear</button>${P.list.length ? `<button class="btn ghost grow" data-act="b-back">Suggestions</button>` : ""}</div>
+    <div class="row"><button class="btn ghost grow" data-act="p-skip">Skip darts</button><button class="btn primary" style="flex:2" data-act="b-save"${ok ? "" : " disabled"}>Save visit</button></div>`;
+  } else {
+    const opts = P.list.map((o, i) => `<button class="opt${i === P.sel ? " on" : ""}" data-popt="${i}"><span class="radio"></span><span class="darts">${o.darts.map(s => `<span>${segLabel(s)}</span>`).join("")}</span><span class="small muted">${o.used ? "usual" : ""}</span></button>`).join("");
+    const sel = P.list[P.sel];
+    body = `
+    <div class="opts">${opts}<button class="opt" data-act="p-build"><span class="grow" style="font-size:15px;font-weight:500">Something else…</span><span class="small muted">build it dart by dart</span></button></div>
+    ${sel ? `<div class="stack" style="gap:8px"><div class="between"><span class="h2">Order thrown</span><span class="small muted">${sel.darts.length > 1 ? "tap two darts to swap them" : ""}</span></div>
+      <div class="slots">${P.order.map((s, i) => `<button class="slot${P.swap === i ? " on" : ""}" data-pslot="${i}"><span class="l">Dart ${i + 1}</span><span class="v">${segLabel(s)}</span></button>`).join("")}</div>
+      ${!validSeq(P.order, v.r, !!v.f, leg.out) ? `<p class="sub" style="color:var(--red);margin:0">That order can't finish: the last dart has to be the double.</p>` : ""}</div>` : ""}
+    <div class="row"><button class="btn ghost grow" data-act="p-skip">Skip darts</button><button class="btn primary" style="flex:2" data-act="p-save"${sel && validSeq(P.order, v.r, !!v.f, leg.out) ? "" : " disabled"}>Save visit</button></div>`;
+  }
+  openSheet(`<div class="stack" style="gap:14px"><div><span class="s13 muted">${esc(head)}</span><p class="sheet-title">${v.s} — which darts?</p></div>${body}</div>`);
+}
+function buildOk() {
+  const P = S.sheet, v = P.v, leg = S.legs.get(P.leg), d = P.b.darts;
+  if (!d.length || sum(d.map(s => VAL[s])) !== v.s) return false;
+  if (v.f) return validSeq(d, v.r, true, leg.out);
+  return d.length === 3;
+}
+function openQuestions(leg, v) {
+  S.sheet = { kind: "q", leg: leg.id, v, du: v.du || (v.f ? null : 3), dd: v.f ? null : (v.r <= 50 && finishTarget(v.r) ? null : 0) };
+  drawQuestions();
+}
+function drawQuestions() {
+  const Q = S.sheet, v = Q.v;
+  const chips = (k, vals) => `<div class="chips">${vals.map(n => `<button class="chip${Q[k] === n ? " on" : ""}" data-q="${k}" data-qv="${n}">${n}</button>`).join("")}</div>`;
+  const maxDd = v.f ? (Q.du || 3) : 3;
+  const ok = (!v.f || Q.du) && Q.dd != null && (!v.f || (Q.dd >= 1 && Q.dd <= Q.du));
+  openSheet(`<div class="stack" style="gap:16px">
+    <div><span class="s13 muted">${v.f ? "Checkout" : `Visit from ${v.r}`}</span><p class="sheet-title">${v.f ? `${v.s} checkout` : `Scored ${v.s}`}</p></div>
+    ${v.f && !v.d ? `<div class="stack" style="gap:8px"><span class="h2">Darts used</span>${chips("du", [1, 2, 3])}</div>` : ""}
+    <div class="stack" style="gap:8px"><span class="h2">Darts at a double</span>${chips("dd", (v.f ? [1, 2, 3] : [0, 1, 2, 3]).filter(n => n <= maxDd))}<p class="sub" style="margin:0">Darts thrown when you were on a finish, for your checkout %.</p></div>
+    <button class="btn primary" data-act="q-save"${ok ? "" : " disabled"}>Save visit</button></div>`);
+}
+function openSummary(leg) {
+  const d = legDarts(leg), last = leg.v[leg.v.length - 1], att = sum(leg.v.map(v => doubleInfo(v, leg.out).att));
+  S.sheet = { kind: "sum", leg: leg.id };
+  openSheet(`<div class="stack" style="gap:14px">
+    <div><span class="s13 muted">Leg ${leg.n} · ${leg.st}</span><p class="sheet-title">Checked out ${last.s} in ${d} darts</p></div>
+    <div class="trio card"><div><span class="l">Average</span><span class="v">${f1(avgOf([leg]))}</span></div><div><span class="l">First 9</span><span class="v">${f1(first9([leg]) || 0)}</span></div><div><span class="l">At double</span><span class="v">${leg.out === "double" ? `1/${att}` : "–"}</span></div></div>
+    <div class="row"><button class="btn ghost grow" data-act="undo-out">Undo checkout</button><button class="btn ghost grow" data-act="end-session">End session</button></div>
+    <button class="btn primary" data-act="next-leg">Next leg</button></div>`);
+}
+function first9(legs) { let p = 0, d = 0; legs.forEach(l => l.v.slice(0, 3).forEach(v => { p += scored(v); d += dartsOf(v); })); return d ? p / d * 3 : null; }
+
+/* ===================== stats ===================== */
+const STATCACHE = new Map();
+const PERIODS = [["7", "7 days"], ["30", "30 days"], ["90", "90 days"], ["365", "Year"], ["all", "All time"]];
+function legsWithin(p, offset = 0) {
+  if (p === "all") return offset ? [] : liveLegs();
+  const span = +p * DAY, end = Date.now() - offset * span, start = end - span;
+  return liveLegs().filter(l => l.at >= start && l.at < end);
+}
+function compute(legs) {
+  const st = { legs: legs.length, done: 0, visits: 0, darts: 0, points: 0, f9p: 0, f9d: 0, scores: [], busts: 0, s60: 0, s100: 0, s140: 0, s180: 0,
+    dd: 0, outs: 0, ddKnownLegs: 0, ranges: [[2, 40], [41, 60], [61, 100], [101, 170]].map(([a, b]) => ({ a, b, att: 0, hit: 0 })),
+    legDarts: [], outsVals: [], dbl: new Map(), byVisit: [], sessions: new Map(), byLegNo: [], byHour: [0, 1, 2, 3].map(() => ({ p: 0, d: 0 })),
+    picked: 0, aimDarts: new Map() };
+  for (const l of legs) {
+    let lp = 0, ld = 0;
+    const out = l.out;
+    l.v.forEach((v, i) => {
+      const d = dartsOf(v), sc = scored(v);
+      st.visits++; st.darts += d; st.points += sc; lp += sc; ld += d;
+      if (i < 3) { st.f9p += sc; st.f9d += d; }
+      (st.byVisit[i] ||= { p: 0, d: 0 }); st.byVisit[i].p += sc; st.byVisit[i].d += d;
+      if (v.b) st.busts++;
+      else { if (!v.f) st.scores.push(v.s); if (v.s >= 60) st.s60++; if (v.s >= 100) st.s100++; if (v.s >= 140) st.s140++; if (v.s === 180) st.s180++; }
+      if (out === "double") {
+        const di = doubleInfo(v, out);
+        if (di.att) {
+          st.dd += di.att; if (v.f) st.outs++;
+          const rg = st.ranges.find(x => v.r >= x.a && v.r <= x.b); if (rg) { rg.att += di.att; if (v.f) rg.hit++; }
+          (di.per || []).forEach(x => { const e = st.dbl.get(x.t) || { att: 0, hit: 0 }; e.att++; if (x.hit) e.hit++; st.dbl.set(x.t, e); });
+        }
+      }
+      if (v.d && v.d.length) {
+        st.picked++;
+        let r = v.r; v.d.forEach((s, k) => { const a = aimFor(r, 3 - k, v.a || "T20", out); const t = finishTarget(r); if (!(out === "double" && t) && (a[0] === "T" || a === "SB" || a === "DB")) { const m = st.aimDarts.get(a) || new Map(); m.set(s, (m.get(s) || 0) + 1); st.aimDarts.set(a, m); } r -= VAL[s]; });
+      }
+    });
+    const h = new Date(l.at).getHours(), hb = h < 12 ? 0 : h < 17 ? 1 : h < 21 ? 2 : 3;
+    st.byHour[hb].p += lp; st.byHour[hb].d += ld;
+    (st.byLegNo[Math.min((l.n || 1) - 1, 7)] ||= { p: 0, d: 0 }); const bl = st.byLegNo[Math.min((l.n || 1) - 1, 7)]; bl.p += lp; bl.d += ld;
+    if (l.done) { st.done++; st.legDarts.push(ld); st.outsVals.push(l.v[l.v.length - 1].s); }
+    const se = st.sessions.get(l.sid) || { sid: l.sid, at: l.at, p: 0, d: 0, legs: 0, ton: 0, best: null };
+    se.at = Math.min(se.at, l.at); se.p += lp; se.d += ld; se.legs++; se.ton += l.v.filter(v => !v.b && v.s >= 100).length;
+    if (l.done) se.best = se.best == null ? ld : Math.min(se.best, ld);
+    st.sessions.set(l.sid, se);
+  }
+  st.avg = st.darts ? st.points / st.darts * 3 : null;
+  st.f9 = st.f9d ? st.f9p / st.f9d * 3 : null;
+  st.dpl = st.legDarts.length ? sum(st.legDarts) / st.legDarts.length : null;
+  st.best = st.legDarts.length ? Math.min(...st.legDarts) : null;
+  st.highOut = st.outsVals.length ? Math.max(...st.outsVals) : null;
+  const n = st.scores.length, m = n ? sum(st.scores) / n : 0;
+  st.sd = n > 1 ? Math.sqrt(sum(st.scores.map(x => (x - m) ** 2)) / (n - 1)) : null;
+  st.sessList = [...st.sessions.values()].sort((a, b) => a.at - b.at);
+  return st;
+}
+function statsFor(p, offset = 0) { const k = p + "|" + offset; if (!STATCACHE.has(k)) STATCACHE.set(k, compute(legsWithin(p, offset))); return STATCACHE.get(k); }
+
+/* charts */
+function niceTicks(lo, hi, n = 4) { const step0 = (hi - lo) / n, mag = 10 ** Math.floor(Math.log10(step0 || 1)), st = [1, 2, 2.5, 5, 10].map(x => x * mag).find(x => x >= step0) || mag; const t = []; for (let v = Math.ceil(lo / st) * st; v <= hi + 1e-9; v += st) t.push(+v.toFixed(6)); return t; }
+function lineChart(vals, opt = {}) {
+  const w = 340, h = opt.h || 150, L = 30, R = 8, T = 8, B = opt.xl ? 20 : 8;
+  if (vals.length < 2) return `<p class="empty" style="padding:16px">${opt.need || "Needs a bit more play to draw."}</p>`;
+  let lo = Math.min(...vals), hi = Math.max(...vals); if (opt.mean != null) { lo = Math.min(lo, opt.mean); hi = Math.max(hi, opt.mean); }
+  const pad = Math.max(1, (hi - lo) * .12); lo -= pad; hi += pad;
+  const X = i => L + (w - L - R) * i / (vals.length - 1), Y = v => T + (h - T - B) * (1 - (v - lo) / (hi - lo));
+  const ticks = niceTicks(lo, hi);
+  const pts = vals.map((v, i) => X(i).toFixed(1) + "," + Y(v).toFixed(1)).join(" ");
+  return `<svg width="100%" viewBox="0 0 ${w} ${h}" role="img" aria-label="${esc(opt.label || "Line chart")}">
+    ${ticks.map(t => `<line x1="${L}" x2="${w - R}" y1="${Y(t).toFixed(1)}" y2="${Y(t).toFixed(1)}" stroke="#efefeb"/><text x="0" y="${(Y(t) + 4).toFixed(1)}" font-size="11" fill="#5c6067">${t}</text>`).join("")}
+    ${opt.mean != null ? `<line x1="${L}" x2="${w - R}" y1="${Y(opt.mean).toFixed(1)}" y2="${Y(opt.mean).toFixed(1)}" stroke="#5c6067" stroke-dasharray="4 4"/>` : ""}
+    <polyline points="${pts}" fill="none" stroke="#1f6f4a" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>
+    ${vals.length <= 30 ? vals.map((v, i) => `<circle cx="${X(i).toFixed(1)}" cy="${Y(v).toFixed(1)}" r="3.2" fill="#fff" stroke="#1f6f4a" stroke-width="2"/>`).join("") : ""}
+    ${opt.xl ? `<text x="${L}" y="${h - 4}" font-size="11" fill="#5c6067">${esc(opt.xl[0])}</text><text x="${w - R}" y="${h - 4}" font-size="11" fill="#5c6067" text-anchor="end">${esc(opt.xl[1])}</text>` : ""}
+  </svg>`;
+}
+function barChart(bars, opt = {}) {
+  const w = 340, h = opt.h || 140, T = 16, B = 20, n = bars.length, gap = 6, bw = (w - gap * (n - 1)) / n;
+  const max = Math.max(...bars.map(b => b.v), 1e-9);
+  return `<svg width="100%" viewBox="0 0 ${w} ${h}" role="img" aria-label="${esc(opt.label || "Bar chart")}">
+    ${bars.map((b, i) => { const bh = (h - T - B) * (b.v / max), x = i * (bw + gap), y = h - B - bh; return `
+      <rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(bh, b.v ? 1.5 : 0).toFixed(1)}" rx="2" fill="${b.c || "#1f6f4a"}"/>
+      <text x="${(x + bw / 2).toFixed(1)}" y="${(y - 4).toFixed(1)}" font-size="10" fill="#5c6067" text-anchor="middle">${esc(b.t ?? "")}</text>
+      <text x="${(x + bw / 2).toFixed(1)}" y="${h - 5}" font-size="10" fill="#5c6067" text-anchor="middle">${esc(b.l)}</text>`; }).join("")}
+    <line x1="0" x2="${w}" y1="${h - B}" y2="${h - B}" stroke="#17191c" stroke-width="1"/></svg>`;
+}
+function boardHeat(counts) {
+  const c = 170, P = (r, a) => [(c + r * Math.sin(a * Math.PI / 180)).toFixed(1), (c - r * Math.cos(a * Math.PI / 180)).toFixed(1)];
+  const arc = (r1, r2, a1, a2) => { const [x1, y1] = P(r2, a1), [x2, y2] = P(r2, a2), [x3, y3] = P(r1, a2), [x4, y4] = P(r1, a1); return `M${x1} ${y1}A${r2} ${r2} 0 0 1 ${x2} ${y2}L${x3} ${y3}A${r1} ${r1} 0 0 0 ${x4} ${y4}Z`; };
+  const tot = sum([...counts.values()]) || 1;
+  // singles are split across the two single beds, so divide by 2 to compare like with like
+  const share = s => (counts.get(s) || 0) / tot;
+  const mx = Math.max(...ALL.filter(s => s !== "M").map(s => s[0] === "S" ? share(s) / 2 : share(s)), 1e-9);
+  const stops = [[242, 245, 243], [156, 188, 169], [31, 111, 74], [15, 61, 40]];
+  const col = v => { const t = Math.min(1, Math.sqrt(v / mx)) * 3, i = Math.min(2, Math.floor(t)), f = t - i; return "rgb(" + stops[i].map((s, k) => Math.round(s + (stops[i + 1][k] - s) * f)).join(",") + ")"; };
+  const rings = [[16, 80, "S", 2], [80, 96, "T", 1], [96, 132, "S", 2], [132, 146, "D", 1]];
+  let paths = "";
+  ORDER.forEach((n, i) => { const a1 = i * 18 - 9, a2 = a1 + 18; rings.forEach(([r1, r2, k, dv]) => { paths += `<path d="${arc(r1, r2, a1, a2)}" fill="${col(share(k + n) / dv)}" stroke="#fff" stroke-width=".8"/>`; }); });
+  const labels = ORDER.map((n, i) => { const [x, y] = P(158, i * 18); return `<text x="${x}" y="${y}" font-size="12" font-weight="600" fill="#5c6067" text-anchor="middle" dominant-baseline="central">${n}</text>`; }).join("");
+  return `<svg width="100%" viewBox="0 0 340 340" role="img" aria-label="Board heat map of where your darts landed" style="max-width:340px;display:block;margin:0 auto">
+    <circle cx="170" cy="170" r="146" fill="#f2f5f3"/>${paths}
+    <circle cx="170" cy="170" r="16" fill="${col(share("SB"))}" stroke="#fff" stroke-width=".8"/><circle cx="170" cy="170" r="7" fill="${col(share("DB"))}" stroke="#fff" stroke-width=".8"/>${labels}</svg>
+    <div class="row small muted" style="margin-top:6px"><span>fewer</span><div style="flex:1;height:8px;border-radius:4px;background:linear-gradient(90deg,#f2f5f3,#9cbca9,#1f6f4a,#0f3d28)"></div><span>more</span></div>`;
+}
+const tile = (l, v, s = "", cls = "") => `<div class="tile"><span class="l">${l}</span><span class="v">${v}</span><span class="s ${cls}">${s}</span></div>`;
+const kv = (l, v) => `<div class="kv"><span>${l}</span><b>${v}</b></div>`;
+const brow = (lab, n, p, w, c) => `<div class="brow"><span class="lab">${lab}</span><div class="bar"><i style="width:${Math.max(0, Math.min(100, w))}%;${c ? "background:" + c : ""}"></i></div><span class="n">${n}</span><span class="p">${p}</span></div>`;
+function delta(cur, prev, unit = "", better = 1) {
+  if (cur == null || prev == null) return ["", ""];
+  const d = cur - prev; if (Math.abs(d) < .05) return ["level with the period before", ""];
+  return [`${d > 0 ? "+" : "−"}${f1(Math.abs(d))}${unit} on the period before`, (d * better > 0) ? "up" : "down"];
+}
+
+function viewStats() {
+  const p = S.stats.period, st = statsFor(p);
+  const head = `<div class="between"><h1 style="margin:2px 0">Stats</h1><select style="width:auto" data-period aria-label="Time period">${PERIODS.map(([k, l]) => `<option value="${k}"${k === p ? " selected" : ""}>${l}</option>`).join("")}</select></div>
+  <div class="seg" style="margin:12px 0">${[["overview", "Overview"], ["scoring", "Scoring"], ["finishing", "Finishing"], ["accuracy", "Accuracy"], ["progress", "Progress"]].map(([k, l]) => `<button class="${S.stats.tab === k ? "on" : ""}" data-stab="${k}">${l}</button>`).join("")}</div>`;
+  if (!st.visits) return head + `<div class="card empty">No legs ${p === "all" ? "yet" : "in this period"}. Play a few and your stats will build up here.</div>`;
+  const body = { overview: statsOverview, scoring: statsScoring, finishing: statsFinishing, accuracy: statsAccuracy, progress: statsProgress }[S.stats.tab](st, p);
+  return head + `<p class="s13 muted" style="margin:0 0 12px">${fmtN(st.legs)} legs · ${fmtN(st.visits)} visits · ${fmtN(st.darts)} darts</p><div class="stack">${body}</div>`;
+}
+const BANDS = [["Under 40", 0, 39, "#c9d9cf"], ["40–59", 40, 59, "#9cbca9"], ["60–99", 60, 99, "#5f9478"], ["100–139", 100, 139, "#1f6f4a"], ["140+", 140, 180, "#0f3d28"]];
+function bandsCard(st) {
+  const n = st.scores.length; if (!n) return "";
+  const b = BANDS.map(([l, a, z, c]) => ({ l, c, k: st.scores.filter(x => x >= a && x <= z).length }));
+  return `<div class="card stack" style="gap:10px"><div><p class="h2">Visit scores</p><p class="sub">Every visit except busts and checkouts (${fmtN(n)})</p></div>
+    <div class="stackbar">${b.filter(x => x.k).map(x => `<div style="width:${x.k / n * 100}%;background:${x.c}"></div>`).join("")}</div>
+    <div>${b.map(x => `<div class="brow"><span class="dot" style="background:${x.c}"></span><span class="grow">${x.l}</span><span class="n">${fmtN(x.k)}</span><span class="p">${pct(x.k, n)}</span></div>`).join("")}</div></div>`;
+}
+function rangesCard(st) {
+  if (!st.dd) return `<div class="card"><p class="h2">Checkout by what was left</p><p class="sub">Appears once you've had shots at a double.</p></div>`;
+  return `<div class="card"><p class="h2">Checkout by what was left</p><p class="sub" style="margin-bottom:6px">Checkouts per dart at a double, by your score at the start of the visit</p>
+    ${st.ranges.map(r => brow(`${r.a}–${r.b}`, r.att ? `${r.hit}/${r.att}` : "–", r.att ? pct(r.hit, r.att) : "–", r.att ? r.hit / r.att * 100 * 2 : 0)).join("")}</div>`;
+}
+function statsOverview(st, p) {
+  const pr = p === "all" ? null : statsFor(p, 1);
+  const [da, ca] = delta(st.avg, pr && pr.visits ? pr.avg : null);
+  const sess = st.sessList.filter(s => s.d >= 9).slice(-20).map(s => s.p / s.d * 3);
+  return `<div class="tiles">
+    ${tile("3-dart average", st.avg == null ? "–" : f1(st.avg), da, ca)}
+    ${tile("First 9 average", st.f9 == null ? "–" : f1(st.f9), st.f9 != null && st.avg != null ? `${f1(Math.abs(st.f9 - st.avg))} ${st.f9 >= st.avg ? "above" : "below"} your average` : "")}
+    ${tile("Checkout", st.dd ? pct(st.outs, st.dd) : "–", st.dd ? `${st.outs} of ${st.dd} darts at a double` : "no shots at a double yet")}
+    ${tile("Darts per leg", st.dpl == null ? "–" : f1(st.dpl), st.best ? `best ${st.best}` : "no finished legs yet")}</div>
+    <div class="card"><div class="between"><p class="h2">3-dart average by session</p><span class="small muted">dashed = period average</span></div>
+      <div style="margin-top:8px">${lineChart(sess, { mean: st.avg, label: "Average by session", need: "Shows once you have two sessions in this period." })}</div></div>
+    ${bandsCard(st)}
+    ${rangesCard(st)}
+    <div class="card"><p class="h2" style="margin-bottom:4px">Highlights</p>
+      ${kv("Fewest darts in a leg", st.best ?? "–")}${kv("Highest checkout", st.highOut ?? "–")}${kv("100+ visits", fmtN(st.s100))}${kv("140+ visits", fmtN(st.s140))}${kv("180s", fmtN(st.s180))}</div>`;
+}
+function statsScoring(st) {
+  const n = st.scores.length, freq = new Map(); st.scores.forEach(s => freq.set(s, (freq.get(s) || 0) + 1));
+  const top = [...freq.entries()].sort((a, b) => b[1] - a[1] || b[0] - a[0]).slice(0, 8);
+  const bins = []; for (let a = 0; a < 180; a += 20) bins.push([a, a + 19]);
+  const hist = bins.map(([a, z]) => ({ l: a === 160 ? "160+" : String(a), v: st.scores.filter(x => x >= a && x <= (a === 160 ? 180 : z)).length }));
+  hist.forEach(b => b.t = b.v || "");
+  const byV = st.byVisit.slice(0, 9).map((x, i) => ({ l: "V" + (i + 1), v: x.d ? x.p / x.d * 3 : 0 }));
+  byV.forEach(b => b.t = b.v ? f1(b.v).replace(/\.0$/, "") : "");
+  const median = n ? st.scores.slice().sort((a, b) => a - b)[Math.floor(n / 2)] : null;
+  return `<div class="tiles">
+      ${tile("3-dart average", f1(st.avg))}${tile("First 9 average", st.f9 == null ? "–" : f1(st.f9))}
+      ${tile("Points per dart", f2(st.points / st.darts))}${tile("Median visit", median ?? "–", st.sd != null ? `spread (SD) ${f1(st.sd)}` : "")}</div>
+    <div class="card"><p class="h2">Big visits</p><div class="trio" style="margin-top:10px">
+      <div><span class="l">60+ visits</span><span class="v">${pct(st.s60, st.visits - st.busts)}</span></div><div><span class="l">100+ per leg</span><span class="v">${st.legs ? f2(st.s100 / st.legs) : "–"}</span></div><div><span class="l">180s</span><span class="v">${st.s180}</span></div></div>
+      <div style="margin-top:8px">${kv("100+ visits", fmtN(st.s100))}${kv("140+ visits", fmtN(st.s140))}${kv("Busts", `${fmtN(st.busts)}`)}</div></div>
+    <div class="card"><p class="h2">How your visits spread</p><p class="sub">Number of visits in each 20-point band</p><div style="margin-top:8px">${barChart(hist, { label: "Visit score histogram" })}</div></div>
+    <div class="card"><p class="h2">Average by visit in the leg</p><p class="sub">3-dart average on your 1st, 2nd, 3rd… visit of each leg</p><div style="margin-top:8px">${barChart(byV, { label: "Average by visit number" })}</div></div>
+    <div class="card"><p class="h2" style="margin-bottom:4px">Most common scores</p>${top.map(([s, k]) => brow(String(s), fmtN(k), pct(k, n), k / top[0][1] * 100)).join("")}</div>
+    ${bandsCard(st)}`;
+}
+function statsFinishing(st) {
+  const finished = st.legDarts.length;
+  const dblAll = [...st.dbl.entries()].sort((a, b) => b[1].att - a[1].att);
+  const dbl = dblAll.filter(([, e]) => e.att >= 5), rest = dblAll.filter(([, e]) => e.att < 5);
+  if (rest.length) dbl.push(["Others", { att: sum(rest.map(r => r[1].att)), hit: sum(rest.map(r => r[1].hit)) }]);
+  const outF = new Map(); st.outsVals.forEach(s => outF.set(s, (outF.get(s) || 0) + 1));
+  const topOut = [...outF.entries()].sort((a, b) => b[1] - a[1] || b[0] - a[0]).slice(0, 6);
+  const ldBins = [["≤15", 0, 15], ["16–18", 16, 18], ["19–21", 19, 21], ["22–24", 22, 24], ["25–30", 25, 30], ["31–40", 31, 40], ["41+", 41, 999]].map(([l, a, z]) => ({ l, v: st.legDarts.filter(x => x >= a && x <= z).length }));
+  ldBins.forEach(b => b.t = b.v || "");
+  return `<div class="tiles">
+      ${tile("Checkout", st.dd ? pct(st.outs, st.dd) : "–", st.dd ? `${st.outs} of ${st.dd} darts` : "")}
+      ${tile("Darts at double per leg", st.outs ? f1(st.dd / st.outs) : "–", "to finish")}
+      ${tile("Highest checkout", st.highOut ?? "–", st.outsVals.filter(x => x > 100).length ? `${st.outsVals.filter(x => x > 100).length} ton-plus finishes` : "")}
+      ${tile("Darts per leg", st.dpl == null ? "–" : f1(st.dpl), finished ? `${finished} legs finished` : "")}</div>
+    ${rangesCard(st)}
+    <div class="card"><p class="h2">Doubles</p><p class="sub" style="margin-bottom:6px">From visits where you picked the darts</p>
+      ${dbl.length ? `<table class="tbl"><tr><th>Double</th><th>Darts</th><th>Hit</th><th>Rate</th></tr>${dbl.map(([t, e]) => `<tr><td><b>${t === "Others" ? "Others" : segLabel(t)}</b></td><td class="muted">${e.att}</td><td class="muted">${e.hit}</td><td><b>${pct(e.hit, e.att)}</b></td></tr>`).join("")}</table>` : `<p class="empty" style="padding:12px">No darts at a double picked yet.</p>`}</div>
+    <div class="card"><p class="h2">Darts per finished leg</p><div style="margin-top:8px">${finished ? barChart(ldBins, { label: "Darts per leg histogram" }) : `<p class="empty" style="padding:12px">Finish a leg to see this.</p>`}</div></div>
+    ${topOut.length ? `<div class="card"><p class="h2" style="margin-bottom:4px">Your checkouts</p>${topOut.map(([s, k]) => brow(String(s), k + "×", "", k / topOut[0][1] * 100)).join("")}</div>` : ""}
+    <div class="card"><p class="h2" style="margin-bottom:4px">Busts</p>${kv("Busts", fmtN(st.busts))}${kv("Per finished leg", finished ? f2(st.busts / finished) : "–")}</div>`;
+}
+function statsAccuracy(st) {
+  const aims = [...st.aimDarts.entries()].map(([a, m]) => [a, m, sum([...m.values()])]).filter(x => x[2] >= 1).sort((a, b) => b[2] - a[2]);
+  if (!aims.length) return `<div class="card empty">Accuracy builds from the darts you pick after each visit. Pick the darts on a few visits and this fills in.</div>`;
+  let aim = S.stats.aim && aims.find(a => a[0] === S.stats.aim) ? S.stats.aim : aims[0][0];
+  const [, m, tot] = aims.find(a => a[0] === aim);
+  const g = s => m.get(s) || 0;
+  let zones;
+  if (aim === "SB" || aim === "DB") zones = [["Bull", g("DB")], ["25", g("SB")], ["Board", tot - g("DB") - g("SB") - g("M")], ["Miss", g("M")]];
+  else {
+    const n = segNum(aim), [l, r] = nbrs(n);
+    const tr = g("T" + n), si = g("S" + n), le = g("S" + l) + g("T" + l) + g("D" + l), ri = g("S" + r) + g("T" + r) + g("D" + r), hi = g("D" + n) + g("M");
+    zones = [["Treble " + n, tr], ["Single " + n, si], [l + " side", le], [r + " side", ri], ["D" + n + " / off", hi], ["Elsewhere", tot - tr - si - le - ri - hi]];
+  }
+  const mx = Math.max(...zones.map(z => z[1]), 1);
+  const trebles = aims.filter(a => a[0][0] === "T" && a[2] >= 10).map(([a, mm, t]) => [a, mm.get(a) || 0, t]);
+  return `<div class="card stack" style="gap:10px">
+      <p class="h2">Where darts land</p><div class="chips">${aims.slice(0, 4).map(([a]) => `<button class="chip${a === aim ? " on" : ""}" data-aim="${a}">${a === "SB" ? "Bull" : segLabel(a)}</button>`).join("")}</div>
+      <p class="sub" style="margin:0">${fmtN(tot)} darts aimed at ${aim === "SB" ? "the bull" : segLabel(aim)}, from the darts you picked (${pct(st.picked, st.visits)} of visits)</p>
+      ${boardHeat(m)}</div>
+    <div class="card"><p class="h2" style="margin-bottom:4px">Aiming at ${aim === "SB" ? "the bull" : segLabel(aim)}</p>${zones.map(([l, k]) => brow(l, fmtN(k), pct(k, tot), k / mx * 100, l.startsWith("Treble") || l === "Bull" ? "" : l.startsWith("Single") || l === "25" ? "#5f9478" : "#9cbca9")).join("")}
+      ${aim[0] === "T" ? (() => { const n = segNum(aim), [l, r] = nbrs(n), le = zones[2][1], ri = zones[3][1]; return `<p class="sub" style="margin-top:6px">${le + ri ? `Misses either side: ${pct(le, le + ri)} to the ${l}, ${pct(ri, le + ri)} to the ${r}.` : ""}</p>`; })() : ""}</div>
+    ${trebles.length ? `<div class="card"><p class="h2">Treble hit rate</p><p class="sub" style="margin-bottom:6px">Trebles you've aimed at 10 or more times</p><table class="tbl"><tr><th>Aim</th><th>Darts</th><th>Hit</th><th>Rate</th></tr>${trebles.map(([a, h, t]) => `<tr><td><b>${a}</b></td><td class="muted">${fmtN(t)}</td><td class="muted">${fmtN(h)}</td><td><b>${pct(h, t)}</b></td></tr>`).join("")}</table></div>` : ""}`;
+}
+function statsProgress(st, p) {
+  const all = statsFor("all");
+  const sess = st.sessList.filter(s => s.d >= 9);
+  const legsSorted = legsWithin(p).filter(l => l.v.length).sort((a, b) => a.at - b.at);
+  const legAvgs = legsSorted.map(l => avgOf([l]));
+  const roll = []; const W = 10; for (let i = W - 1; i < legAvgs.length; i++) roll.push(sum(legAvgs.slice(i - W + 1, i + 1)) / W);
+  const bestSess = all.sessList.filter(s => s.legs >= 3).sort((a, b) => b.p / b.d - a.p / a.d)[0];
+  const bestLegAvg = liveLegs().filter(l => l.done).map(l => ({ l, a: avgOf([l]) })).sort((a, b) => b.a - a.a)[0];
+  const mostTon = all.sessList.slice().sort((a, b) => b.ton - a.ton)[0];
+  const byLeg = st.byLegNo.map((x, i) => x ? { l: i === 7 ? "8+" : "L" + (i + 1), v: x.d ? x.p / x.d * 3 : 0 } : null).filter(Boolean); byLeg.forEach(b => b.t = f1(b.v));
+  const byHour = ["Morning", "Afternoon", "Evening", "Late"].map((l, i) => ({ l, v: st.byHour[i].d ? st.byHour[i].p / st.byHour[i].d * 3 : 0 })).filter(b => b.v); byHour.forEach(b => b.t = f1(b.v));
+  return `<div class="card"><p class="h2">Rolling average</p><p class="sub">Average over your last 10 legs, leg by leg</p><div style="margin-top:8px">${lineChart(roll, { label: "Rolling 10-leg average", need: "Shows after 11 legs in this period.", xl: legsSorted.length ? [fmtDate(legsSorted[W - 1]?.at || legsSorted[0].at), fmtDate(legsSorted[legsSorted.length - 1].at)] : null })}</div></div>
+    <div class="card"><p class="h2">Average by session</p><div style="margin-top:8px">${lineChart(sess.map(s => s.p / s.d * 3), { mean: st.avg, label: "Average by session", need: "Shows once you have two sessions.", xl: sess.length > 1 ? [fmtDate(sess[0].at), fmtDate(sess[sess.length - 1].at)] : null })}</div></div>
+    <div class="card"><p class="h2" style="margin-bottom:4px">Personal bests (all time)</p>
+      ${kv("Fewest darts in a leg", all.best ?? "–")}${kv("Highest checkout", all.highOut ?? "–")}
+      ${kv("Best leg average", bestLegAvg ? `${f1(bestLegAvg.a)} <span class="muted small">${fmtDateY(bestLegAvg.l.at)}</span>` : "–")}
+      ${kv("Best session average", bestSess ? `${f1(bestSess.p / bestSess.d * 3)} <span class="muted small">${fmtDateY(bestSess.at)}</span>` : "–")}
+      ${kv("Most 100+ in a session", mostTon && mostTon.ton ? `${mostTon.ton} <span class="muted small">${fmtDateY(mostTon.at)}</span>` : "–")}
+      ${kv("180s", all.s180)}</div>
+    ${byLeg.length > 1 ? `<div class="card"><p class="h2">Average by leg of the session</p><p class="sub">Does your game hold up as a session goes on?</p><div style="margin-top:8px">${barChart(byLeg, { label: "Average by leg number" })}</div></div>` : ""}
+    ${byHour.length > 1 ? `<div class="card"><p class="h2">Average by time of day</p><div style="margin-top:8px">${barChart(byHour, { label: "Average by time of day" })}</div></div>` : ""}`;
+}
+
+/* ===================== history ===================== */
+function viewHistory() {
+  const sessions = new Map();
+  liveLegs().forEach(l => { const s = sessions.get(l.sid) || { sid: l.sid, at: l.at, legs: [] }; s.at = Math.min(s.at, l.at); s.legs.push(l); sessions.set(l.sid, s); });
+  const list = [...sessions.values()].sort((a, b) => b.at - a.at);
+  if (!list.length) return `<h1>History</h1><div class="card empty">Your sessions and legs will be listed here.</div>`;
+  return `<h1>History</h1><div class="stack">${list.map(s => {
+    const legs = s.legs.sort((a, b) => a.n - b.n), done = legs.filter(l => l.done), a = avgOf(legs);
+    const open = S.hist.open === s.sid;
+    return `<div class="sess"><button data-hsess="${s.sid}"><div><div style="font-weight:600;font-size:15px">${fmtDate(s.at)}</div><div class="small muted">${fmtTime(s.at)} · ${legs.length} leg${legs.length === 1 ? "" : "s"}${done.length ? ` · best ${Math.min(...done.map(legDarts))} darts` : ""}</div></div>
+      <div style="text-align:right"><div style="font-weight:700;font-size:18px">${a == null ? "–" : f1(a)}</div><div class="small muted">average</div></div></button>
+      ${open ? legs.map(l => `<button class="leg" data-hleg="${l.id}"><span>Leg ${l.n} <span class="muted small">· ${l.st}</span></span><span class="muted">${l.done ? `${legDarts(l)} darts · out ${l.v[l.v.length - 1].s}` : l.id === S.meta.active ? "in play" : "unfinished"}</span><b>${l.v.length ? f1(avgOf([l])) : "–"}</b></button>`).join("") : ""}</div>`;
+  }).join("")}</div>`;
+}
+function openLeg(id) {
+  const l = S.legs.get(id); if (!l) return;
+  S.sheet = { kind: "leg", leg: id };
+  let left = l.st;
+  const rows = l.v.map((v, i) => { left -= scored(v); return `<div class="vrow${v.b ? " bust" : ""}"><span class="n">${i + 1}</span><span class="s">${v.s}</span><span class="d">${v.b ? "Bust" : v.d ? v.d.map(segLabel).join(" · ") : ""}</span><span class="l">${left}</span></div>`; }).join("");
+  openSheet(`<div class="stack" style="gap:14px"><div><span class="s13 muted">${fmtDate(l.at)} · ${fmtTime(l.at)}</span><p class="sheet-title">Leg ${l.n} · ${l.st}</p></div>
+    <div class="trio card"><div><span class="l">Average</span><span class="v">${l.v.length ? f1(avgOf([l])) : "–"}</span></div><div><span class="l">Darts</span><span class="v">${legDarts(l)}</span></div><div><span class="l">Result</span><span class="v">${l.done ? "Won" : "Unfinished"}</span></div></div>
+    ${rows ? `<div class="card" style="padding:2px 14px">${rows}</div>` : ""}
+    <div class="row">${!l.done && l.id !== S.meta.active ? `<button class="btn ghost grow" data-act="resume" data-id="${l.id}">Resume leg</button>` : ""}<button class="btn ghost danger grow" data-act="del-leg" data-id="${l.id}">Delete leg</button></div></div>`);
+}
+
+/* ===================== more ===================== */
+function viewMore() {
+  const opt = (k, v, lab) => `<button class="chip${S.set[k] === v ? " on" : ""}" data-set="${k}" data-val="${v}">${lab}</button>`;
+  const g = gh.cfg || {};
+  const stTxt = { off: "Not connected", syncing: "Syncing…", on: gh.last ? `Synced ${fmtTime(gh.last)}` : "Connected", retry: gh.detail, error: gh.detail }[gh.state] || "";
+  return `<h1>More</h1><div class="stack">
+    <div class="card stack"><div><p class="h2">Ask which darts</p><p class="sub">After each visit total, show the list of likely darts.</p>
+      <div class="chips" style="margin-top:8px">${opt("ask", "always", "Every visit")}${opt("ask", "finishes", "On a finish only")}${opt("ask", "never", "Never")}</div></div>
+      <div><p class="h2">New legs</p><div class="chips" style="margin-top:8px">${[301, 501, 701].map(n => opt("start", n, n)).join("")}${opt("out", "double", "Double out")}${opt("out", "straight", "Straight out")}</div></div></div>
+    <div class="card stack"><div><p class="h2">Sync between devices</p><p class="sub">Your legs are kept as one file in your private GitHub repository. Changes go up within a minute, or straight away when you switch away from the app, and come down whenever you open it.</p></div>
+      ${ghOn() ? `<div class="kv"><span>Repository</span><b>${esc(g.repo)}</b></div><div class="kv"><span>Status</span><b style="${gh.state === "error" ? "color:var(--red)" : ""}">${esc(stTxt)}</b></div>
+        <div class="row"><button class="btn primary grow" data-act="gh-sync">Sync now</button><button class="btn ghost grow" data-act="gh-off">Disconnect</button></div>`
+      : `<label class="f">Private repository<input type="text" id="ghRepo" placeholder="owner/repository" value="${esc(g.repo || "matt2868/darts-stats-data")}" autocapitalize="off" autocorrect="off" spellcheck="false"></label>
+        <label class="f">Access token<input type="password" id="ghTok" placeholder="github_pat_…" autocomplete="off"></label>
+        <button class="btn primary" data-act="gh-connect">Connect</button>${gh.state === "error" ? `<p class="sub" style="color:var(--red);margin:0">${esc(gh.detail)}</p>` : ""}`}</div>
+    <div class="card stack"><div><p class="h2">Backup</p><p class="sub">A file with every leg, visit and dart. Importing merges it with what's here.</p></div>
+      <div class="row"><button class="btn ghost grow" data-act="export">Export JSON</button><button class="btn ghost grow" data-act="import">Import</button></div>
+      <p class="sub" style="margin:0">${fmtN(liveLegs().length)} legs on this device · version ${APP_VERSION}</p></div></div>`;
+}
+function exportJSON() {
+  const body = JSON.stringify({ app: "darts-stats", v: 1, exportedAt: new Date().toISOString(), legs: [...S.legs.values()] }, null, 1);
+  const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([body], { type: "application/json" }));
+  a.download = `darts-stats-${new Date().toISOString().slice(0, 10)}.json`; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000); toast("Backup saved");
+}
+async function importJSON(file) {
+  try {
+    const j = JSON.parse(await file.text()); const legs = Array.isArray(j) ? j : j.legs;
+    if (!Array.isArray(legs)) throw new Error();
+    const ch = mergeLegs(legs);
+    if (idb && ch.length) await idbPut(ch).catch(() => {});
+    writeMirror(); scheduleGh(1000); render(); toast(ch.length ? `Imported ${ch.length} leg${ch.length === 1 ? "" : "s"}` : "Nothing new in that file");
+  } catch (e) { toast("That file isn't a Darts Stats backup"); }
+}
+
+/* ===================== GitHub sync ===================== */
+const gh = { cfg: null, timer: null, busy: false, again: false, state: "off", detail: "", last: 0 };
+function ghLoad() { try { gh.cfg = JSON.parse(localStorage.getItem(LS_GH) || "null"); } catch (e) { gh.cfg = null; } if (gh.cfg) gh.state = "on"; }
+function ghSave(c) { gh.cfg = c; try { if (c) localStorage.setItem(LS_GH, JSON.stringify(c)); else localStorage.removeItem(LS_GH); } catch (e) {} }
+const ghOn = () => !!(gh.cfg && gh.cfg.token && gh.cfg.repo);
+const ghHeaders = () => ({ Authorization: "Bearer " + gh.cfg.token, Accept: "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28" });
+async function ghApi(path, opts = {}) {
+  let r;
+  try { r = await fetch(`https://api.github.com/repos/${gh.cfg.repo}/contents/${path}`, { ...opts, cache: "no-store", headers: { ...ghHeaders(), ...(opts.body ? { "Content-Type": "application/json" } : {}) } }); }
+  catch (e) { const x = new Error("Offline: will sync when you're back online."); x.offline = true; throw x; }
+  if ((r.status === 404 || r.status === 409) && (!opts.method || opts.method === "GET")) return null;   // 409 here means a brand-new, empty repository
+  if (!r.ok) {
+    const x = new Error(r.status === 401 ? "GitHub refused the token. It may have expired: make a new one and connect again."
+      : r.status === 403 ? "The token can't write to that repository. Check it has Contents: Read and write."
+      : r.status === 404 ? "Couldn't find that repository. Check the name, and that the token can see it."
+      : `GitHub replied ${r.status}.`);
+    x.status = r.status; throw x;
+  }
+  return r.status === 204 ? {} : r.json();
+}
+const b64enc = bytes => { let t = ""; for (let i = 0; i < bytes.length; i += 0x8000) t += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000)); return btoa(t); };
+const b64dec = b => Uint8Array.from(atob(String(b).replace(/\s/g, "")), c => c.charCodeAt(0));
+async function ghRead(path) {
+  const f = await ghApi(path); if (!f) return null;
+  if (f.content) return { bytes: b64dec(f.content), sha: f.sha };
+  const bl = await fetch(f.git_url, { cache: "no-store", headers: ghHeaders() }).then(r => r.json());   // files over 1 MB come via their blob
+  return { bytes: b64dec(bl.content), sha: f.sha };
+}
+function scheduleGh(ms = 4000) { if (!ghOn()) return; clearTimeout(gh.timer); gh.timer = setTimeout(ghSync, ms); }
+/** Pull the shared file, keep the newer copy of every leg, then write back anything this device has that's newer. */
+async function ghSync() {
+  if (!ghOn()) return;
+  if (gh.busy) { gh.again = true; return; }
+  gh.busy = true; gh.state = "syncing"; if (S.tab === "more") render();
+  try {
+    for (let attempt = 0; attempt < 4; attempt++) {
+      const f = await ghRead("legs.json");
+      const R = f ? JSON.parse(new TextDecoder().decode(f.bytes)) : { legs: [] };
+      const remote = R.legs || [];
+      const ch = mergeLegs(remote);
+      if (ch.length) { if (idb) await idbPut(ch).catch(() => {}); writeMirror(); if (S.tab !== "play" || !activeLeg() || ch.some(l => l.id === S.meta.active)) render(); }
+      const rmap = new Map(remote.map(l => [l.id, Number(l.u) || 0]));
+      const need = !f || [...S.legs.values()].some(l => (rmap.has(l.id) ? rmap.get(l.id) : -1) < (Number(l.u) || 0));
+      if (!need) break;
+      const body = JSON.stringify({ v: 1, savedAt: Date.now(), legs: [...S.legs.values()] });
+      try { await ghApi("legs.json", { method: "PUT", body: JSON.stringify({ message: "Sync", content: b64enc(new TextEncoder().encode(body)), ...(f ? { sha: f.sha } : {}) }) }); break; }
+      catch (e) { if ((e.status === 409 || e.status === 422) && attempt < 3) continue; throw e; }   // another device saved first: pull again and merge
+    }
+    gh.state = "on"; gh.detail = ""; gh.last = Date.now();
+  } catch (e) {
+    gh.state = e.offline ? "retry" : "error"; gh.detail = e.message || "Couldn't reach GitHub.";
+    if (e.offline) scheduleGh(30000);
+  } finally {
+    gh.busy = false;
+    if (S.tab === "more") render();
+    if (gh.again) { gh.again = false; scheduleGh(1500); }
+  }
+}
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") { if (ghOn() && gh.timer) { clearTimeout(gh.timer); ghSync(); } } else { scheduleGh(800); wake(); } });
+
+/* keep the screen on while a leg is in play */
+let wl = null;
+async function wake() {
+  const want = S.tab === "play" && !!activeLeg() && document.visibilityState === "visible";
+  try {
+    if (want && !wl && navigator.wakeLock) { wl = await navigator.wakeLock.request("screen"); wl.addEventListener("release", () => { wl = null; }); }
+    else if (!want && wl) { await wl.release(); wl = null; }
+  } catch (e) { wl = null; }
+}
+
+/* ===================== events ===================== */
+document.addEventListener("click", e => {
+  const t = e.target.closest("button, [data-act]");
+  if (!t) { if (e.target.id === "scrim" && S.sheet && S.sheet.kind !== "sum") closeSheet(); return; }
+  const d = t.dataset;
+  if (d.tab) { S.tab = d.tab; closeSheet(); render(); window.scrollTo(0, 0); return; }
+  if (d.key) { onKey(d.key); return; }
+  if (d.set) { const v = d.set === "start" ? +d.val : d.val; S.set[d.set] = v; saveSettings(); render(); return; }
+  if (d.stab) { S.stats.tab = d.stab; render(); return; }
+  if (d.aim) { S.stats.aim = d.aim; render(); return; }
+  if (d.hsess) { S.hist.open = S.hist.open === d.hsess ? null : d.hsess; render(); return; }
+  if (d.hleg) { openLeg(d.hleg); return; }
+  const P = S.sheet;
+  if (d.popt != null && P) { P.sel = +d.popt; P.order = P.list[P.sel].darts.slice(); P.swap = null; drawPicker(); return; }
+  if (d.pslot != null && P) { const i = +d.pslot; if (P.swap == null) P.swap = i; else { if (P.swap !== i) [P.order[P.swap], P.order[i]] = [P.order[i], P.order[P.swap]]; P.swap = null; } drawPicker(); return; }
+  if (d.bmult && P) { P.b.mult = d.bmult; drawPicker(); return; }
+  if ((d.bnum || d.bseg) && P) { if (P.b.darts.length >= 3) { toast("Three darts already: tap a dart to clear it"); return; } const s = d.bseg || ((d.bnum && P.b.mult) + d.bnum); P.b.darts.push(s); P.b.mult = "S"; drawPicker(); return; }
+  if (d.bslot != null && P) { P.b.darts = P.b.darts.slice(0, +d.bslot); drawPicker(); return; }
+  if (d.q && P) { P[d.q] = +d.qv; if (d.q === "du" && P.dd != null && P.dd > P.du) P.dd = null; drawQuestions(); return; }
+  const a = d.act; if (!a) return;
+  const leg = P ? S.legs.get(P.leg) : activeLeg();
+  if (a === "start" || a === "next-leg") { closeSheet(); startLeg(); }
+  else if (a === "end-session") endSession();
+  else if (a === "aim") { const opts = ["T20", "T19", "T18", "SB"]; S.set.aim = opts[(opts.indexOf(S.set.aim) + 1) % opts.length]; saveSettings(); render(); toast(`Aiming at ${S.set.aim === "SB" ? "the bull" : S.set.aim}`); }
+  else if (a === "leg-menu") {
+    S.sheet = { kind: "menu" };
+    openSheet(`<div class="stack"><p class="sheet-title">This leg</p><button class="btn ghost" data-act="abandon">Stop this leg (keep its visits)</button><button class="btn ghost danger" data-act="discard">Discard this leg</button><button class="btn" data-act="close">Cancel</button></div>`);
+  }
+  else if (a === "abandon") { S.meta.active = null; saveMeta(); closeSheet(); render(); toast("Leg stopped. It stays in your history."); }
+  else if (a === "discard") { const l = activeLeg(); if (l) { l.del = true; persist([l]); } S.meta.active = null; saveMeta(); closeSheet(); render(); toast("Leg discarded"); }
+  else if (a === "close") closeSheet();
+  else if (a === "p-build") { P.build = true; P.b = { mult: "S", darts: [] }; drawPicker(); }
+  else if (a === "b-back") { P.build = false; drawPicker(); }
+  else if (a === "b-clear") { P.b.darts = []; drawPicker(); }
+  else if (a === "b-save") { if (!buildOk()) return; P.v.d = P.b.darts.slice(); askOrSave(leg, P.v, true); }
+  else if (a === "p-save") { const sel = P.list[P.sel]; if (!sel) return; P.v.d = P.order.slice(); askOrSave(leg, P.v, true); }
+  else if (a === "p-skip") askOrSave(leg, P.v, false);
+  else if (a === "q-save") { const v = P.v; if (v.f && !v.d) v.du = P.du; v.dd = P.dd; saveVisit(leg, v); }
+  else if (a === "undo-out") { const l = S.legs.get(P.leg); l.v.pop(); l.done = false; delete l.fin; S.meta.active = l.id; saveMeta(); persist([l]); closeSheet(); S.tab = "play"; render(); }
+  else if (a === "resume") { const l = S.legs.get(d.id); S.meta.active = l.id; S.meta.sid = l.sid; S.meta.sLast = Date.now(); saveMeta(); closeSheet(); S.tab = "play"; render(); }
+  else if (a === "del-leg") {
+    if (t.dataset.sure) { const l = S.legs.get(d.id); l.del = true; if (S.meta.active === l.id) { S.meta.active = null; saveMeta(); } persist([l]); closeSheet(); render(); toast("Leg deleted"); }
+    else { t.dataset.sure = "1"; t.textContent = "Tap again to delete"; }
+  }
+  else if (a === "export") exportJSON();
+  else if (a === "import") $("#importFile").click();
+  else if (a === "gh-connect") {
+    const repo = ($("#ghRepo").value || "").trim().replace(/^https?:\/\/github\.com\//, "").replace(/\.git$/, "").replace(/\/$/, ""), token = ($("#ghTok").value || "").trim();
+    if (!/^[\w.-]+\/[\w.-]+$/.test(repo)) { toast("Enter the repository as owner/name"); return; }
+    if (!token) { toast("Paste your access token"); return; }
+    ghSave({ repo, token }); gh.state = "syncing"; render(); ghSync().then(() => toast(gh.state === "on" ? "Connected and synced" : gh.detail));
+  }
+  else if (a === "gh-sync") ghSync().then(() => toast(gh.state === "on" ? "Synced" : gh.detail));
+  else if (a === "gh-off") { ghSave(null); gh.state = "off"; render(); toast("GitHub sync turned off on this device"); }
+});
+document.addEventListener("change", e => {
+  if (e.target.matches("[data-period]")) { S.stats.period = e.target.value; render(); }
+  if (e.target.id === "importFile" && e.target.files[0]) { importJSON(e.target.files[0]); e.target.value = ""; }
+});
+document.addEventListener("keydown", e => {
+  if (S.tab !== "play" || !activeLeg() || S.sheet || /input|select|textarea/i.test(document.activeElement?.tagName || "")) return;
+  if (/^\d$/.test(e.key)) onKey(e.key); else if (e.key === "Backspace") onKey("back"); else if (e.key === "Enter") onKey("next");
+});
+
+/* ===================== boot ===================== */
+async function boot() {
+  try { Object.assign(S.set, JSON.parse(localStorage.getItem(LS_SET) || "{}")); } catch (e) {}
+  try { Object.assign(S.meta, JSON.parse(localStorage.getItem(LS_META) || "{}")); } catch (e) {}
+  try { idb = await openIDB(); mergeLegs(await idbAll()); } catch (e) { idb = null; }
+  let mirror = []; try { mirror = JSON.parse(localStorage.getItem(LS_LEGS) || "[]"); } catch (e) {}
+  const fromMirror = mergeLegs(mirror);
+  if (idb && fromMirror.length) idbPut(fromMirror).catch(() => {});
+  ghLoad(); render();
+  if (ghOn()) ghSync();
+  if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").catch(() => {});
+}
+boot();
+</script>
+</body>
+</html>
