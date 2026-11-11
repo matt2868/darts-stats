@@ -252,6 +252,12 @@ button:active:not(:disabled){transform:scale(.97)}
 .rings button.wide{grid-column:span 2}
 .rings button:first-child{background:var(--acc-soft);border-color:var(--acc-line)}
 @media (prefers-reduced-motion: reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+.dsels{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.dsel{display:flex;flex-direction:column;align-items:center;gap:2px;padding:10px 4px;border:1.5px solid var(--line);background:#fff;border-radius:14px}
+.dsel .l{font-size:12px;color:var(--muted)} .dsel .v{font-size:24px;font-weight:700} .dsel .t{font-size:12px;color:var(--muted)}
+.dsel.on{background:var(--acc-soft);border-color:var(--acc)} .dsel.on .t{color:var(--acc);font-weight:600}
+.dsel:disabled{opacity:1;background:var(--bg);border-color:var(--line2)} .dsel:disabled .v{color:var(--muted)}
+.dsel.on:disabled{background:var(--acc-soft);border-color:var(--acc-line)} .dsel.on:disabled .v{color:var(--ink)}
 </style>
 </head>
 <body>
@@ -271,7 +277,7 @@ button:active:not(:disabled){transform:scale(.97)}
 <input type="file" id="importFile" accept="application/json,.json" hidden>
 <script>
 "use strict";
-const APP_VERSION = "1.3";
+const APP_VERSION = "1.4";
 /* ===================== helpers ===================== */
 const $ = (s, el = document) => el.querySelector(s);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -510,10 +516,12 @@ function atDouble(t, x) {
   const n = +t.slice(1), [l, r] = nbrs(n);
   return x === t || x === "S" + n || x === "D" + l || x === "D" + r;
 }
+/** Your answer if you gave one; legs saved before you were asked use where the dart landed. */
+const dartAt = (v, k, t, x) => v.dda ? !!v.dda[k] : atDouble(t, x);
 function doubleInfo(v, out) {
   if (v.d && v.d.length && out === "double") {
     let r = v.r, att = 0; const per = [];
-    for (let k = 0; k < v.d.length; k++) { const s = v.d[k]; const t = finishTarget(r); if (t && atDouble(t, s)) { att++; per.push({ t, hit: s === t, k }); } r -= VAL[s]; if (r <= 1 && r !== 0) break; if (r === 0) break; }
+    for (let k = 0; k < v.d.length; k++) { const s = v.d[k]; const t = finishTarget(r); if (t && dartAt(v, k, t, s)) { att++; per.push({ t, hit: s === t, k }); } r -= VAL[s]; if (r <= 1 && r !== 0) break; if (r === 0) break; }
     return { att, per };
   }
   return { att: v.dd || 0, per: null };
@@ -880,15 +888,33 @@ function submitScore() {
   else askOrSave(leg, draft, false);
 }
 /** After the darts are chosen (or skipped), ask what still can't be worked out, then save. */
-function needsDoubleQ(leg, v) {
-  if (leg.out !== "double") return false;
-  if (v.d && v.d.length) return false;
-  return v.f || (v.r <= 170 && canFinish(v.r, "double"));
+/** Darts-at-a-double question. Returns null when there's nothing to ask (and fills in the answer when it's obvious). */
+const insideOf = t => t === "DB" ? "SB" : "S" + t.slice(1);
+function halvingTotals(r) {   // every total you can make by only missing or going just inside the double
+  const out = new Set();
+  const rec = (rem, k, tot) => { if (k === 3) { out.add(tot); return; } const t = finishTarget(rem); if (!t) return; rec(rem, k + 1, tot); if (t === "DB") return; const h = rem / 2; if (rem - h >= 2) rec(rem - h, k + 1, tot + h); };   // on 50, a 25 might be a set-up, so it isn't assumed
+  rec(r, 0, 0); return out;
+}
+function dblQuestion(leg, v) {
+  delete v.dd; delete v.dda;
+  if (leg.out !== "double") return null;
+  if (v.d && v.d.length) {
+    let r = v.r, clear = true; const at = [];
+    v.d.forEach((x, k) => { const t = finishTarget(r); if (t) { at.push(k); if (!(x === "M" || x === t || x === insideOf(t))) clear = false; } r -= VAL[x]; });
+    if (!at.length) { v.dd = 0; return null; }
+    if (clear) { v.dda = v.d.map((_, k) => at.includes(k)); v.dd = at.length; return null; }
+    return { kind: "darts", at };
+  }
+  if (v.f) return { kind: "count" };
+  if (!v.b && v.r - v.s > 50) { v.dd = 0; return null; }   // never got down to 50 or less
+  if (!v.b && v.r <= 50 && halvingTotals(v.r).has(v.s)) { v.dd = 3; return null; }
+  return { kind: "count" };
 }
 function askOrSave(leg, v, picked) {
   if (!picked) delete v.d;
   if (v.f && v.d && v.d.length) v.du = v.d.length;
-  if (needsDoubleQ(leg, v) || (v.f && !v.du)) { openQuestions(leg, v); return; }
+  const q = dblQuestion(leg, v);
+  if (q || (v.f && !v.du)) { openQuestions(leg, v, q); return; }
   saveVisit(leg, v);
 }
 function saveVisit(leg, v) {
@@ -1103,20 +1129,31 @@ function buildOk() {
   if (v.f) return validSeq(d, v.r, true, leg.out);
   return d.length === 3;
 }
-function openQuestions(leg, v) {
-  S.sheet = { kind: "q", leg: leg.id, v, du: v.du || (v.f ? null : 3), dd: v.f ? null : (v.r <= 50 && finishTarget(v.r) ? null : 0) };
-  drawQuestions();
+function openQuestions(leg, v, q) {
+  const Q = { kind: "q", leg: leg.id, v, q: q || { kind: "count" }, du: v.du || (v.f ? null : 3), dd: null };
+  if (Q.q.kind === "darts") { let r = v.r; Q.sel = v.d.map((x, k) => { const on = Q.q.at.includes(k); r -= VAL[x]; return on; }); }
+  S.sheet = Q; drawQuestions();
 }
 function drawQuestions() {
-  const Q = S.sheet, v = Q.v;
+  const Q = S.sheet, v = Q.v, leg = S.legs.get(Q.leg);
   const chips = (k, vals) => `<div class="chips">${vals.map(n => `<button class="chip${Q[k] === n ? " on" : ""}" data-q="${k}" data-qv="${n}">${n}</button>`).join("")}</div>`;
-  const maxDd = v.f ? (Q.du || 3) : 3;
-  const ok = (!v.f || Q.du) && Q.dd != null && (!v.f || (Q.dd >= 1 && Q.dd <= Q.du));
-  openSheet(`<div class="stack" style="gap:16px">
-    <div><span class="s13 muted">${v.f ? "Checkout" : `Visit from ${v.r}`}</span><p class="sheet-title">${v.f ? `${v.s} checkout` : `Scored ${v.s}`}</p></div>
-    ${v.f && !v.d ? `<div class="stack" style="gap:8px"><span class="h2">Darts used</span>${chips("du", [1, 2, 3])}</div>` : ""}
-    <div class="stack" style="gap:8px"><span class="h2">Darts at a double</span>${chips("dd", (v.f ? [1, 2, 3] : [0, 1, 2, 3]).filter(n => n <= maxDd))}<p class="sub" style="margin:0">Only darts aimed at the double (or the bull on 50). Leave out set-up darts, like a single 2 from 34.</p></div>
-    <button class="btn primary" data-act="q-save"${ok ? "" : " disabled"}>Save visit</button></div>`);
+  const head = `<div><span class="s13 muted">${v.f ? "Checkout" : v.b ? `Bust from ${v.r}` : `Visit from ${v.r}`}</span><p class="sheet-title">${v.f ? `${v.s} checkout` : v.b ? "Bust" : `Scored ${v.s}`}</p></div>`;
+  let body, ok;
+  if (Q.q.kind === "darts") {
+    let r = v.r; const last = v.d.length - 1;
+    const cells = v.d.map((x, k) => { const t = finishTarget(r), can = Q.q.at.includes(k), lock = v.f && k === last; r -= VAL[x];
+      return `<button class="dsel${Q.sel[k] ? " on" : ""}" data-dsel="${k}"${can && !lock ? "" : " disabled"}><span class="l">Dart ${k + 1}</span><span class="v">${segLabel(x)}</span><span class="t">${!t ? "not on a finish" : Q.sel[k] ? `at ${segLabel(t)}` : "set-up"}</span></button>`; }).join("");
+    const n = Q.sel.filter(Boolean).length; ok = !v.f || n >= 1;
+    body = `<div class="stack" style="gap:8px"><div class="between"><span class="h2">Which were at a double?</span><span class="s13 muted">${n} dart${n === 1 ? "" : "s"}</span></div>
+      <div class="dsels">${cells}</div><p class="sub" style="margin:0">Tap a dart to mark it as a set-up instead, like a single 2 from 34.</p></div>`;
+  } else {
+    const maxDd = v.f ? (Q.du || 3) : 3;
+    if (v.f && Q.du === 1) Q.dd = 1;
+    ok = (!v.f || Q.du) && Q.dd != null && (!v.f || (Q.dd >= 1 && Q.dd <= Q.du));
+    body = `${v.f && !v.d ? `<div class="stack" style="gap:8px"><span class="h2">Darts used</span>${chips("du", [1, 2, 3])}</div>` : ""}
+      <div class="stack" style="gap:8px"><span class="h2">Darts at a double</span>${chips("dd", (v.f ? [1, 2, 3] : [0, 1, 2, 3]).filter(n => n <= maxDd))}<p class="sub" style="margin:0">Count darts aimed at the double, or the bull on 50. Leave out set-up darts.</p></div>`;
+  }
+  openSheet(`<div class="stack" style="gap:16px">${head}${body}<button class="btn primary" data-act="q-save"${ok ? "" : " disabled"}>Save visit</button></div>`);
 }
 function openSummary(leg) {
   const d = legDarts(leg), last = leg.v[leg.v.length - 1], att = sum(leg.v.map(v => doubleInfo(v, leg.out).att));
@@ -1167,7 +1204,7 @@ function compute(legs) {
         let r = v.r, prev = null;
         v.d.forEach((x, k) => {
           inc(st.heat.all, x); inc(r > 170 ? st.heat.scoring : st.heat.finishing, x);
-          if (out === "double" && finishTarget(r) && atDouble(finishTarget(r), x)) inc(st.heat.dbl, x);
+          if (out === "double" && finishTarget(r) && dartAt(v, k, finishTarget(r), x)) inc(st.heat.dbl, x);
           if (r > 170 && k < 3) {
             const b = st.byDart[k]; b.n++; b.p += VAL[x]; if (x[0] === "T") b.t++; if (x === "T20") b.t20++; if (x === "S20" || x === "T20" || x === "D20") b.b20++;
             if (prev) { const a = prev.x === "T20" ? st.after.t : st.after.o; if (prev.sc) { a.n++; if (x === "T20") a.h++; } }
@@ -1329,7 +1366,7 @@ function statsFinishing(st) {
       ${tile("Highest checkout", st.highOut ?? "–", st.outsVals.filter(x => x > 100).length ? `${st.outsVals.filter(x => x > 100).length} ton-plus finishes` : "")}
       ${tile("Darts per leg", st.dpl == null ? "–" : f1(st.dpl), finished ? `${finished} legs finished` : "")}</div>
     ${rangesCard(st)}
-    <div class="card"><p class="h2">What counts as a dart at a double</p><p class="sub">When you pick the darts, a dart thrown on a finish counts if it lands on the double, the single just inside it, a neighbouring double, or off the board. On 50 that's the bull or the 25. Anything else is treated as a set-up dart, so splitting 34 with a single 2 doesn't count against you. When you skip the darts, the number you enter is used.</p></div>
+    <div class="card"><p class="h2">How darts at a double are counted</p><p class="sub">You tell the app. Any visit that gets down to 50 or less asks how many darts were at a double, or which ones if you picked the darts. It only skips asking when the answer is obvious: three misses, only going just inside the double (like 20 or 30 from 40), or a checkout where the other darts did the same.</p></div>
     <div class="card"><p class="h2">Doubles</p><p class="sub" style="margin-bottom:6px">From visits where you picked the darts</p>
       ${dbl.length ? `<table class="tbl"><tr><th>Double</th><th>Darts</th><th>Hit</th><th>Rate</th></tr>${dbl.map(([t, e]) => `<tr><td><b>${t === "Others" ? "Others" : segLabel(t)}</b></td><td class="muted">${e.att}</td><td class="muted">${e.hit}</td><td><b>${pct(e.hit, e.att)}</b></td></tr>`).join("")}</table>` : `<p class="empty" style="padding:12px">No darts at a double picked yet.</p>`}</div>
     ${st.dblPos[0].att ? `<div class="card"><p class="h2">Doubles by dart in the visit</p><p class="sub" style="margin-bottom:6px">Hit rate when the 1st, 2nd or 3rd dart of a visit was at a double</p>
@@ -1573,6 +1610,7 @@ document.addEventListener("click", e => {
   if (d.bmult && P) { P.b.mult = d.bmult; drawPicker(); return; }
   if ((d.bnum || d.bseg) && P) { if (P.b.darts.length >= 3) { toast("Three darts already: tap a dart to clear it"); return; } const s = d.bseg || ((d.bnum && P.b.mult) + d.bnum); P.b.darts.push(s); P.b.mult = "S"; drawPicker(); return; }
   if (d.bslot != null && P) { P.b.darts = P.b.darts.slice(0, +d.bslot); drawPicker(); return; }
+  if (d.dsel != null && P) { const k = +d.dsel; P.sel[k] = !P.sel[k]; drawQuestions(); return; }
   if (d.q && P) { P[d.q] = +d.qv; if (d.q === "du" && P.dd != null && P.dd > P.du) P.dd = null; drawQuestions(); return; }
   const a = d.act; if (!a) return;
   const leg = P ? S.legs.get(P.leg) : activeLeg();
@@ -1605,7 +1643,12 @@ document.addEventListener("click", e => {
   else if (a === "b-clear") { P.b.darts = []; drawPicker(); }
   else if (a === "b-save") { if (!buildOk()) return; P.v.d = P.b.darts.slice(); if (P.bust) P.v.s = sum(P.v.d.map(x => VAL[x])); askOrSave(leg, P.v, true); }
   else if (a === "p-skip") askOrSave(leg, P.v, false);
-  else if (a === "q-save") { const v = P.v; if (v.f && !v.d) v.du = P.du; v.dd = P.dd; saveVisit(leg, v); }
+  else if (a === "q-save") {
+    const v = P.v;
+    if (P.q.kind === "darts") { v.dda = P.sel.slice(); v.dd = P.sel.filter(Boolean).length; }
+    else { if (v.f && !v.d) v.du = P.du; v.dd = P.dd; }
+    saveVisit(leg, v);
+  }
   else if (a === "undo-out") { const l = S.legs.get(P.leg); l.v.pop(); l.done = false; delete l.fin; if (l.m && M() && l.m.res === "won") { M().me--; delete l.m.res; M().turn = "me"; } S.meta.active = l.id; saveMeta(); persist([l]); closeSheet(); S.tab = "play"; render(); }
   else if (a === "resume") { const l = S.legs.get(d.id); if (l.m && (!M() || M().id !== l.m.id)) { toast("That leg was part of a finished match"); return; } S.meta.active = l.id; S.meta.sid = l.sid; S.meta.sLast = Date.now(); saveMeta(); closeSheet(); S.tab = "play"; render(); }
   else if (a === "del-leg") {
