@@ -274,6 +274,67 @@ button:active:not(:disabled){transform:scale(.97)}
 .chip{font-weight:600}
 .chip.on{background:var(--nav);border-color:var(--nav)}
 .dmini{display:flex;height:12px;border-radius:6px;overflow:hidden;gap:2px;margin:8px 0 4px}
+/* controls: separate outlined boxes, few shadows */
+.card,.tile,.sess{border-width:1.5px;box-shadow:none}
+.card.hero{box-shadow:none}
+.btn{border-width:1.5px}
+.chip{border:1.5px solid var(--line);border-radius:10px;padding:7px 12px}
+.chip.on{background:var(--acc-soft);border-color:var(--acc);color:var(--acc)}
+.seg{background:none;padding:0;gap:6px;flex-wrap:wrap;border-radius:0}
+.seg button{flex:1 1 auto;border:1.5px solid var(--line);background:#fff;border-radius:10px;padding:9px 12px;color:var(--ink)}
+.seg button.on{background:var(--acc-soft);border-color:var(--acc);color:var(--acc);box-shadow:none}
+.tabs{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+.tabs::-webkit-scrollbar{display:none}
+.tabs button{flex:0 0 auto;border:1.5px solid color-mix(in srgb,var(--c) 35%,#fff);background:#fff;color:var(--c);border-radius:10px;padding:8px 13px;font-size:13px;font-weight:700}
+.tabs button.on{background:var(--c);border-color:var(--c);color:#fff}
+.keypad button{box-shadow:none;border-width:1.5px}
+.keypad button:active:not(:disabled){transform:scale(.95);box-shadow:none;background:var(--acc-soft);border-color:var(--acc)}
+.keypad .go{box-shadow:none}
+.quick button{box-shadow:none;border:1.5px solid var(--acc-line);color:var(--acc);background:#fff}
+.iconbtn{width:42px;height:34px;border:1.5px solid var(--line);border-radius:10px;background:#fff;font-weight:700;color:var(--muted);line-height:1}
+.mis{border:1.5px solid var(--warm);background:var(--warm-soft);border-radius:14px;padding:12px 14px}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px 8px}
+.grid3>div{display:flex;flex-direction:column;gap:1px;min-width:0}
+.grid3 .l{font-size:12px;color:var(--muted)} .grid3 .v{font-family:var(--disp);font-size:19px;font-weight:700}
+.fincard{border-color:var(--acc-line);background:linear-gradient(180deg,var(--acc-soft),#fff 70%)}
+.tag{font-size:13px;font-weight:700;color:#fff;background:var(--acc);border-radius:8px;padding:3px 8px}
+.mrow{display:grid;grid-template-columns:1fr 64px 64px;gap:8px;padding:6px 0;border-bottom:1px solid var(--line2);font-size:14px;align-items:baseline}
+.mrow:last-child{border-bottom:0}
+.mrow span:first-child{color:var(--muted)} .mrow b{text-align:right;font-family:var(--disp);font-size:16px} .mrow .c{color:var(--warm-dark);text-align:right}
+.mrow.head{font-size:12px;font-weight:600;color:var(--muted)} .mrow.head span{text-align:right} .mrow.head span:first-child{text-align:left;color:var(--ink);font-size:15px}
+.two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.tile.good{background:var(--acc-soft);border-color:var(--acc-line)} .tile.good .v{color:var(--acc)}
+.tile.bad{background:var(--red-soft);border-color:#f0c9c4} .tile.bad .v{color:var(--red)}
+.tile.gold{background:#fbf3dc;border-color:#ecd28e} .tile.gold .v{color:#946a07}
+.tbl.form td,.tbl.form th{font-size:13px}
+.fm{display:inline-flex;align-items:center;gap:3px;font-weight:600}
+.fm i{font-style:normal;font-size:9px}
+.fm.up{color:var(--acc)} .fm.down{color:var(--red)}
+.guide{display:grid;grid-template-columns:repeat(10,minmax(0,1fr));gap:5px}
+.guide span{border-radius:8px;text-align:center;padding:7px 0;font-family:var(--disp);font-weight:700;font-size:14px}
+.guide .up{background:var(--acc-soft);color:var(--acc);border:1.5px solid var(--acc-line)}
+.guide .down{background:var(--red-soft);color:var(--red);border:1.5px solid #f0c9c4}
+.rec{display:grid;grid-template-columns:1fr auto;grid-template-rows:auto auto;column-gap:10px;width:100%;text-align:left;border:0;border-bottom:1px solid var(--line2);background:none;padding:8px 0;font-size:14px}
+.rec:last-child{border-bottom:0}
+.rec span{color:var(--muted)} .rec b{font-family:var(--disp);font-size:17px;text-align:right;grid-row:span 2;align-self:center} .rec small{font-size:11px;color:var(--faint)}
+.ach{display:flex;gap:12px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--line2)}
+.ach:last-child{border-bottom:0}
+.medal{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;border:2px solid}
+.medal.t-1{color:#b9c4bb;border-color:#d3ded1;background:#f3f6f2}
+.medal.t0{color:#8a5426;border-color:#d39a64;background:#f8e8d8}
+.medal.t1{color:#5b6670;border-color:#aeb8c0;background:#eef1f3}
+.medal.t2{color:#8a6206;border-color:#e3b947;background:#fbf0cf}
+.ach.locked b{color:var(--muted)}
+@media (min-width:680px){
+  #app.play.match{grid-template-columns:minmax(0,1.85fr) minmax(0,1fr)}
+  #app.play .hero{padding:12px 16px!important;gap:8px!important}
+  #app.play .rem .big{font-size:64px}
+  #app.play .hero .trio{padding-top:8px}
+  #app.play .visits .vrow,#app.play .visits .rrow{padding:5px 0}
+  #app.play.match .pl .big{font-size:46px}
+  #app.play.match .pl{padding:10px 12px}
+  #app.play .keypad{min-height:0}
+}
 </style>
 </head>
 <body>
@@ -293,7 +354,7 @@ button:active:not(:disabled){transform:scale(.97)}
 <input type="file" id="importFile" accept="application/json,.json" hidden>
 <script>
 "use strict";
-const APP_VERSION = "1.5";
+const APP_VERSION = "1.6";
 /* ===================== helpers ===================== */
 const $ = (s, el = document) => el.querySelector(s);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -372,9 +433,42 @@ function route(rem, darts, out = "double") {
   ROUTE.set(key, best); return best;
 }
 const canFinish = (rem, out) => out === "double" ? (rem <= 170 && !!route(rem, 3, out)) : rem <= 180 && !!route(rem, 3, out);
-function aimFor(rem, left, visitAim, out) {
+/** Where a dart is aimed from a score: your own habit there if you have one, else the standard route, else a set-up shot. */
+function aimFor(rem, left, visitAim, out, mine = true) {
+  if (mine) { const pa = personalAim(rem); if (pa) return pa; }
   if (rem <= 170 && rem <= left * 60) { const r = route(rem, left, out); if (r) return r[0]; }
+  if (out === "double" && rem <= 100) { const su = setupAim(rem); if (su) return su; }
   return visitAim;
+}
+function setupAim(r) {   // one dart to leave the nicest double
+  let best = null, bc = 1e9;
+  for (const x of ALL) { if (x === "M" || x[0] === "D") continue; const t = finishTarget(r - VAL[x]); if (!t) continue; const c = (DBL_PREF[t] ?? 3) + (x[0] === "T" ? .4 : 0) + (x === "SB" ? 1 : 0); if (c < bc) { bc = c; best = x; } }
+  return best;
+}
+const PAIM = new Map();
+const G20 = new Set([12, 5, 20, 1, 18]), G19 = new Set([16, 7, 19, 3, 17]);
+/** Learned from the darts you've picked: the bed you usually go for on this score (needs 2+ darts there, mostly one bed). */
+function personalAim(r) {
+  if (PAIM.has(r)) return PAIM.get(r);
+  const H = pickHistory(); let res = null;
+  if (r > 170) { const g = H.scoreGrp; if (g[19] >= 9 && g[19] > g[20] * 1.2) res = "T19"; }
+  else {
+    const m = H.aimAt.get(r);
+    if (m) {
+      let tot = 0, bn = 0, bc = 0; for (const [n, c] of m) { tot += c; if (c > bc) { bc = c; bn = n; } }
+      if (tot >= 2 && bc / tot >= .5) {
+        const t = finishTarget(r);
+        if (t && (t === "DB" ? bn === 25 : bn === r / 2)) res = t;
+        else if (bn === 25) res = r === 50 ? "DB" : "SB";
+        else {
+          const cost = x => { const l = r - VAL[x], ft = finishTarget(l); return ft ? (DBL_PREF[ft] ?? 3) + (x[0] === "D" ? 1 : 0) : l <= 170 && route(l, 2) ? 4 + (x[0] === "S" ? .5 : 0) : 8 + l / 100; };
+          const opts = ["T" + bn, "S" + bn, "D" + bn].filter(x => r - VAL[x] >= 2);
+          res = opts.length ? opts.sort((a, b) => cost(a) - cost(b))[0] : "S" + bn;
+        }
+      }
+    }
+  }
+  PAIM.set(r, res); return res;
 }
 
 /* combination suggestions */
@@ -406,9 +500,35 @@ function validSeq(seq, rem, finishing, out) {
   if (finishing) return r === 0 && (out !== "double" || isDbl(seq[seq.length - 1]));
   return true;
 }
+/** The likely targets for a dart from a score, weighted: your habit there first, then the sensible routes or set-ups. */
+const ALTS = new Map();
+function firsts(rem, left, out) {   // best first darts of a finish, or of a set-up shot, with a cost each
+  const best = new Map(), segs = ALL.filter(x => x !== "M"), finals = out === "double" ? segs.filter(isDbl) : segs;
+  for (let n = 1; n <= left && !best.size; n++) {
+    const rec = (pre, r) => {
+      if (pre.length === n - 1) { for (const f of finals) if (VAL[f] === r) { const c = (out === "double" ? (DBL_PREF[f] ?? 3) : 0) + sum(pre.map(setupCost)), k = (pre[0] || f); if (!best.has(k) || c < best.get(k)) best.set(k, c); } return; }
+      for (const x of segs) { const r2 = r - VAL[x]; if (r2 >= 2) rec([...pre, x], r2); }
+    };
+    if (rem <= left * 60) rec([], rem);
+  }
+  if (!best.size && out === "double" && rem <= 100) for (const x of ALL) { if (x === "M" || x[0] === "D") continue; const t = finishTarget(rem - VAL[x]); if (t) best.set(x, (DBL_PREF[t] ?? 3) + (x[0] === "T" ? .4 : 0) + (x === "SB" ? 1 : 0)); }
+  return [...best.entries()].sort((a, b) => a[1] - b[1]).slice(0, 3);
+}
+function aimMix(rem, left, out, aim = "T20") {
+  const key = rem + "|" + left + "|" + out + "|" + aim; if (ALTS.has(key)) return ALTS.get(key);
+  const pa = personalAim(rem);
+  let mix;
+  if (rem > 170) mix = [[pa || aim, 1]];
+  else {
+    const f = firsts(rem, left, out); let ws = f.length ? f.map(([a, c]) => [a, Math.exp(-2 * c)]) : [[aim, 1]];
+    const z = sum(ws.map(w => w[1])); ws = ws.map(([a, w]) => [a, w / z]);
+    mix = pa ? [[pa, .7], ...ws.map(([a, w]) => [a, w * .3])] : ws;
+  }
+  ALTS.set(key, mix); return mix;
+}
 function seqProb(seq, rem, aim, out) {
   let r = rem, p = 1;
-  seq.forEach((s, i) => { const a = aimFor(r, 3 - i, aim, out); p *= (aimDist(a).get(s) || FLOOR); r -= VAL[s]; });
+  seq.forEach((x, i) => { let q = 0; for (const [a, w] of aimMix(r, 3 - i, out, aim)) q += w * (aimDist(a).get(x) || 0); p *= Math.max(q, FLOOR); r -= VAL[x]; });
   return p;
 }
 function suggest(score, rem, aim, out, finishing) {
@@ -456,7 +576,7 @@ function saveSettings() { try { localStorage.setItem(LS_SET, JSON.stringify(S.se
 function saveMeta() { try { localStorage.setItem(LS_META, JSON.stringify(S.meta)); } catch (e) {} }
 function persist(legs) {
   legs.forEach(l => { l.u = Date.now(); S.legs.set(l.id, l); });
-  HISTORY = null; STATCACHE.clear();
+  resetLearn(); STATCACHE.clear();
   if (idb) idbPut(legs).catch(() => {});
   writeMirror(); scheduleGh();
 }
@@ -464,7 +584,7 @@ function persist(legs) {
 function mergeLegs(list) {
   const ch = [];
   for (const l of list || []) { if (!l || !l.id) continue; const cur = S.legs.get(l.id); if (!cur || (Number(l.u) || 0) > (Number(cur.u) || 0)) { S.legs.set(l.id, l); ch.push(l); } }
-  if (ch.length) { HISTORY = null; STATCACHE.clear(); }
+  if (ch.length) { resetLearn(); STATCACHE.clear(); }
   return ch;
 }
 const liveLegs = () => [...S.legs.values()].filter(l => !l.del);
@@ -472,9 +592,10 @@ const activeLeg = () => { const l = S.meta.active && S.legs.get(S.meta.active); 
 
 /* past picks: which darts you usually choose for a score, and in which order */
 let HISTORY = null;
+function resetLearn() { HISTORY = null; PAIM.clear(); VDIST.clear(); ALTS.clear(); }
 function pickHistory() {
   if (HISTORY) return HISTORY;
-  const count = new Map(), order = new Map(), byRem = new Map(), high = new Map(), reach = new Map();
+  const count = new Map(), order = new Map(), byRem = new Map(), high = new Map(), reach = new Map(), aimAt = new Map(), scoreGrp = { 20: 0, 19: 0 };
   liveLegs().sort((a, b) => a.at - b.at).forEach(l => l.v.forEach(v => {
     if (v.r != null && v.r <= 170) { const e = reach.get(v.r) || { n: 0, outs: 0 }; e.n++; if (v.f) e.outs++; reach.set(v.r, e); }
     if (!v.b && v.r != null) {
@@ -483,8 +604,17 @@ function pickHistory() {
     }
     if (!v.d || !v.d.length) return;
     const k = comboKey(v.d); count.set(v.s + "|" + k, (count.get(v.s + "|" + k) || 0) + 1); order.set(k, v.d);
+    let r = v.r;
+    v.d.forEach(x => {
+      if (x !== "M" && r != null) {
+        const n = segNum(x);
+        if (r <= 170) { const m = aimAt.get(r) || new Map(); m.set(n, (m.get(n) || 0) + 1); aimAt.set(r, m); }
+        else if (G20.has(n)) scoreGrp[20]++; else if (G19.has(n)) scoreGrp[19]++;
+      }
+      r -= VAL[x];
+    });
   }));
-  return (HISTORY = { count, order, byRem, high, reach });
+  return (HISTORY = { count, order, byRem, high, reach, aimAt, scoreGrp });
 }
 
 /* likely visit scores: what the board model expects from here, outweighed by what you've actually scored */
@@ -563,7 +693,8 @@ function render() {
   document.querySelectorAll("#nav button").forEach(b => b.classList.toggle("on", b.dataset.tab === S.tab));
   const app = $("#app");
   const entering = S.lastTab !== S.tab; S.lastTab = S.tab;
-  app.className = (S.tab === "play" && activeLeg() ? "play" : "") + (entering ? " enter" : "");
+  const al = S.tab === "play" && activeLeg();
+  app.className = (al ? "play" + (al.m && M() && M().id === al.m.id ? " match" : "") : "") + (entering ? " enter" : "");
   app.innerHTML = S.tab === "play" ? viewPlay() : S.tab === "stats" ? viewStats() : S.tab === "history" ? viewHistory() : viewMore();
   S.animNew = false;
   animateNums();
@@ -605,13 +736,11 @@ function viewPlay() {
   </div>`;
   const quick = likelyScores(leg);
   return `<div class="pane-l">
-  <div class="p-head"><span class="t">${m ? `${leg.st} · Leg ${leg.m.leg} · first to ${m.first}` : `${leg.st} · Leg ${leg.n}`}</span>
-    <button class="chip" data-act="leg-menu" aria-label="Leg options">•••</button></div>
   ${board}
   ${visitsCard(leg, m)}
   ${sideInfo(leg, m)}
   </div><div class="pane-r">
-  <div class="entry"><span class="s13 muted">${myTurn ? `Visit ${leg.v.length + 1}` : "CPU throwing…"}</span><span class="v${S.input ? "" : " ph"}" id="entry">${S.input || "0"}</span></div>
+  <div class="entry"><div class="row" style="gap:10px"><button class="iconbtn" data-act="leg-menu" aria-label="Leg options">•••</button><span class="s13 muted">${myTurn ? `${m ? `Leg ${leg.m.leg} of first to ${m.first}` : `Leg ${leg.n}`} · visit ${leg.v.length + 1}` : "CPU throwing…"}</span></div><span class="v${S.input ? "" : " ph"}" id="entry">${S.input || "0"}</span></div>
   <div class="quick${myTurn ? "" : " wait"}" aria-label="Likely scores">${quick.map(q => `<button data-quick="${q}" class="${q === rem ? "out" : ""}" aria-label="Score ${q}${q === rem ? ", checkout" : ""}">${q}</button>`).join("")}</div>
   ${finRow(leg, myTurn)}
   <div class="keypad${myTurn ? "" : " wait"}">
@@ -664,20 +793,35 @@ function scoreboard(leg, m) {
   </div>`;
 }
 /** The other half of the screen when the Fold is open: your record from this score, this session, and the CPU's visits. */
+/** The left half when the Fold is open: this session (or the match), swapped for your record on this double when you're on a finish. */
 function sideInfo(leg, m) {
-  const rem = legRem(leg), H = pickHistory(), r = H.reach.get(rem);
-  let from = "";
-  if (rem <= 170) {
-    const hist = [...(H.byRem.get(rem) || new Map()).entries()].sort((a, b) => b[1] - a[1]).slice(0, 5);
-    from = `<div class="card"><p class="h2">From ${rem}</p>
-      <p class="sub">${r ? `You've been on ${rem} ${r.n} time${r.n === 1 ? "" : "s"}${leg.out === "double" && canFinish(rem, "double") ? ` and checked out ${r.outs} (${pct(r.outs, r.n)})` : ""}.` : `You haven't been on ${rem} before.`}</p>
-      ${hist.length ? `<p class="s13 muted" style="margin:10px 0 6px">What you've scored from here</p><div class="chips">${hist.map(([sc, c]) => `<span class="chip">${sc} <span class="muted">×${c}</span></span>`).join("")}</div>` : ""}</div>`;
-  }
-  const st = compute(sessionLegs(leg.sid));
-  const sess = `<div class="card"><p class="h2" style="margin-bottom:4px">This session</p>
-    ${kv("Legs", `${st.legs}${st.done ? ` · ${st.done} finished` : ""}`)}${kv("Average", st.avg == null ? "–" : f1(st.avg))}${kv("First 9", st.f9 == null ? "–" : f1(st.f9))}
-    ${kv("Checkout", st.dd ? `${pct(st.outs, st.dd)} (${st.outs}/${st.dd})` : "–")}${kv("100+ · 140+ · 180", `${st.s100} · ${st.s140} · ${st.s180}`)}${kv("Best leg", st.best ? st.best + " darts" : "–")}</div>`;
-  return `<div class="side">${from}${sess}</div>`;
+  const rem = legRem(leg);
+  if (rem <= 170 && canFinish(rem, leg.out)) return `<div class="side">${finishInfo(leg, rem)}</div>`;
+  if (m) return `<div class="side">${matchInfo(leg, m)}</div>`;
+  const st = compute(sessionLegs(leg.sid)), g = (l, v) => `<div><span class="l">${l}</span><span class="v">${v}</span></div>`;
+  return `<div class="side"><div class="card"><p class="h2" style="margin-bottom:8px">This session</p><div class="grid3">
+    ${g("Legs", st.legs)}${g("Average", st.avg == null ? "–" : f1(st.avg))}${g("First 9", st.f9 == null ? "–" : f1(st.f9))}
+    ${g("Checkout", st.dd ? pct(st.outs, st.dd) : "–")}${g("100+ · 180", `${st.s100} · ${st.s180}`)}${g("Best leg", st.best ? st.best + " darts" : "–")}</div></div></div>`;
+}
+function finishInfo(leg, rem) {
+  const H = pickHistory(), r = H.reach.get(rem), rt = route(rem, 3, leg.out) || [], t = finishTarget(rem) || rt[rt.length - 1];
+  const A = statsFor("all"), e = t && A.dbl.get(t), lo = t && A.leftOn.get(t);
+  const hist = [...(H.byRem.get(rem) || new Map()).entries()].sort((a, b) => b[1] - a[1]).slice(0, 5);
+  const g = (l, v) => `<div><span class="l">${l}</span><span class="v">${v}</span></div>`;
+  return `<div class="card fincard"><div class="between"><p class="h2">On ${rem}</p>${t ? `<span class="tag">${segLabel(t)}</span>` : ""}</div>
+    <div class="grid3" style="margin-top:8px">
+      ${g(`Been on ${rem}`, r ? r.n + "×" : "never")}${g("Checked out", r ? pct(r.outs, r.n) : "–")}
+      ${t ? g(`${segLabel(t)} hit rate`, e && e.att ? pct(e.hit, e.att) : "–") : g("Route", rt.map(segLabel).join(" "))}
+      ${t ? g(`Darts at ${segLabel(t)}`, e ? fmtN(e.att) : 0) : ""}${t ? g(`Left on ${segLabel(t)}`, lo ? lo.n + "×" : "never") : ""}${t ? g(`Out from ${segLabel(t)}`, lo && lo.n ? pct(lo.outs, lo.n) : "–") : ""}</div>
+    ${hist.length ? `<p class="s13 muted" style="margin:10px 0 6px">What you've scored from ${rem}</p><div class="chips">${hist.map(([sc, c]) => `<span class="chip">${sc} <span class="muted">×${c}</span></span>`).join("")}</div>` : ""}</div>`;
+}
+function matchInfo(leg, m) {
+  const ml = matchLegs(m.id), me = compute(ml), cv = ml.flatMap(l => l.m.cpuV || []);
+  const cs = cv.filter(v => !v.b).map(v => v.s), cnt = f => cs.filter(f).length, ca = cpuAvg(ml);
+  const row = (l, a, b) => `<div class="mrow"><span>${l}</span><b>${a}</b><b class="c">${b}</b></div>`;
+  return `<div class="card"><div class="mrow head"><span>This match</span><span>You</span><span class="c">CPU</span></div>
+    ${row("Average", me.avg == null ? "–" : f1(me.avg), ca == null ? "–" : f1(ca))}${row("100+", me.s100, cnt(x => x >= 100))}${row("140+", me.s140, cnt(x => x >= 140))}
+    ${row("180s", me.s180, cnt(x => x === 180))}${row("Highest", me.visits ? Math.max(...ml.flatMap(l => l.v.filter(v => !v.b).map(v => v.s)), 0) : "–", cs.length ? Math.max(...cs) : "–")}${row("Legs", m.me, m.cpu)}</div>`;
 }
 function viewSetup() {
   const sid = S.meta.sid && Date.now() - (S.meta.sLast || 0) < 3 * 3600e3 ? S.meta.sid : null;
@@ -726,7 +870,7 @@ const throwAt = (aim, sg) => { const [x, y] = aimPoint(aim); return segAt(x + sg
 function cpuVisit(rem, sg, out = "double") {
   const d = []; let r = rem;
   for (let i = 0; i < 3; i++) {
-    const x = throwAt(aimFor(r, 3 - i, "T20", out), sg); d.push(x);
+    const x = throwAt(aimFor(r, 3 - i, "T20", out, false), sg); d.push(x);
     const r2 = r - VAL[x];
     if (r2 < 0 || (out === "double" && (r2 === 1 || (r2 === 0 && !isDbl(x))))) return { d, s: sum(d.map(y => VAL[y])), b: true, r: rem };
     r = r2; if (r === 0) return { d, s: rem, f: true, r: rem };
@@ -1106,16 +1250,17 @@ function drawPicker() {
     if (P.bust) title = "Bust — which darts?";
     const B = P.b, tot = sum(B.darts.map(x => VAL[x])), need = v.s - tot;
     const nums = Array.from({ length: 20 }, (_, i) => i + 1).map(n => `<button data-bnum="${n}">${n}</button>`).join("");
-    const ok = buildOk();
     const note = P.bust ? (B.darts.length ? `Total ${tot}. The last dart should be the one that bust.` : "Tap the darts in the order you threw them, ending with the one that bust.")
       : B.darts.length ? `Total ${tot}${need > 0 ? ` · ${need} still to place` : need < 0 ? ` · ${-need} too many` : " ✓"}${v.f && leg.out === "double" ? ". The last dart must be a double." : ""}` : `Tap the darts in the order you threw them.${v.f && leg.out === "double" ? " The last dart must be a double." : ""}`;
     body = `
     <div class="slots">${[0, 1, 2].map(i => `<button class="slot${B.darts[i] ? "" : " empty"}${i === B.darts.length ? " next" : ""}" data-bslot="${i}"><span class="l">Dart ${i + 1}</span><span class="v">${B.darts[i] ? segLabel(B.darts[i]) : "–"}</span></button>`).join("")}</div>
     <div class="seg">${["S", "D", "T"].map(m => `<button class="${B.mult === m ? "on" : ""}" data-bmult="${m}">${m === "S" ? "Single" : m === "D" ? "Double" : "Treble"}</button>`).join("")}</div>
     <div class="numgrid">${nums}<button data-bseg="SB">25</button><button data-bseg="DB">Bull</button><button data-bseg="M" style="grid-column:span 3">Miss</button></div>
-    <p class="sub" style="margin:0">${note}</p>
-    <div class="row"><button class="btn ghost grow" data-act="b-clear">Clear</button>${P.list.length ? `<button class="btn ghost grow" data-act="b-back">Suggestions</button>` : ""}</div>
-    <div class="row"><button class="btn ghost grow" data-act="p-skip">Skip darts</button><button class="btn primary" style="flex:2" data-act="b-save"${ok ? "" : " disabled"}>Save visit</button></div>`;
+    ${P.mis ? (() => { const e = P.mis, what = e.b ? `${e.s} and bust` : e.f ? `a ${e.s} checkout` : String(e.s);
+      return `<div class="mis"><p class="h2" style="margin:0">Those darts make ${what}, not ${P.bust ? "a bust" : v.f ? `a ${v.s} checkout` : v.s}</p><p class="sub" style="margin:4px 0 10px">Change the visit to ${what}, or fix the darts?</p>
+        <div class="row"><button class="btn ghost grow" data-act="mis-fix">Fix the darts</button><button class="btn primary grow" data-act="mis-use">Make it ${e.b ? "a bust" : e.s}</button></div></div>`; })()
+      : `<p class="sub" style="margin:0">${P.auto ? "Saving…" : note}</p>`}
+    <div class="row"><button class="btn ghost grow" data-act="b-clear">Clear</button>${P.list.length ? `<button class="btn ghost grow" data-act="b-back">Suggestions</button>` : ""}<button class="btn ghost grow" data-act="p-skip">Skip darts</button></div>`;
   } else if (P.step === "order") {
     title = "Tap them in the order you threw";
     const n = P.combo.length;
@@ -1130,6 +1275,26 @@ function drawPicker() {
     <button class="btn ghost" data-act="p-skip">Skip darts</button>`;
   }
   openSheet(`<div class="stack" style="gap:14px"><div><span class="s13 muted">${esc(head)}</span><p class="sheet-title">${esc(title)}</p></div>${body}</div>`);
+}
+/** What a set of darts actually does from a score: its total, and whether it checks out or busts (darts after a bust are dropped). */
+function evalDarts(r0, darts, out) {
+  let r = r0;
+  for (let k = 0; k < darts.length; k++) {
+    const x = darts[k], r2 = r - VAL[x], d = darts.slice(0, k + 1), tot = r0 - r2;
+    if (r2 < 0 || (out === "double" && (r2 === 1 || (r2 === 0 && !isDbl(x))))) return { s: tot, b: true, d };
+    if (r2 === 0) return { s: r0, f: true, d };
+    r = r2;
+  }
+  return { s: r0 - r, d: darts.slice() };
+}
+function buildCheck() {
+  const P = S.sheet, v = P.v, leg = S.legs.get(P.leg), dd = P.b.darts, ev = evalDarts(v.r, dd, leg.out);
+  const done = ev.f || ev.b || dd.length === 3;
+  if (!done) { drawPicker(); return; }
+  const match = P.bust ? !!ev.b : (ev.s === v.s && !!ev.f === !!v.f && !ev.b);
+  if (!match) { P.mis = ev; drawPicker(); return; }
+  P.auto = true; drawPicker();   // complete: save on its own after a beat
+  setTimeout(() => { if (S.sheet !== P) return; P.auto = false; v.d = ev.d; v.s = ev.s; if (ev.b) v.b = true; askOrSave(leg, v, true); }, 300);
 }
 function buildOk() {
   const P = S.sheet, v = P.v, leg = S.legs.get(P.leg), d = P.b.darts, dbl = leg.out === "double";
@@ -1186,17 +1351,35 @@ function first9(legs) { let p = 0, d = 0; legs.forEach(l => l.v.slice(0, 3).forE
 
 /* ===================== stats ===================== */
 const STATCACHE = new Map();
-const PERIODS = [["7", "7 days"], ["30", "30 days"], ["90", "90 days"], ["365", "Year"], ["all", "All time"]];
+const PERIODS = [["7", "7 days"], ["30", "30 days"], ["90", "90 days"], ["year", "This year"], ["365", "Last 12 months"], ["all", "All time"]];
 function legsWithin(p, offset = 0) {
   if (p === "all") return offset ? [] : liveLegs();
+  if (p === "year") {   // offset 1 = the same stretch of last year
+    const now = new Date(), y = now.getFullYear() - offset, start = new Date(y, 0, 1).getTime(), end = offset ? new Date(y, now.getMonth(), now.getDate() + 1).getTime() : Infinity;
+    return liveLegs().filter(l => l.at >= start && l.at < end);
+  }
   const span = +p * DAY, end = Date.now() - offset * span, start = end - span;
   return liveLegs().filter(l => l.at >= start && l.at < end);
+}
+/** What each picked dart was aimed at. Doubles: from the score you were on. Scoring: from where it landed
+ *  (12 to 18 round the top means the 20, 16 to 17 round the bottom means the 19), otherwise the dart before or after. */
+function inferAims(v, out) {
+  let r = v.r;
+  const res = v.d.map((x, k) => {
+    const ft = out === "double" ? finishTarget(r) : null, t = ft && dartAt(v, k, ft, x) ? ft : null, o = { r, dbl: t, n: null };
+    if (t) o.n = t === "DB" ? 25 : +t.slice(1);
+    else if (r > 170) { const n = segNum(x); if (G20.has(n)) o.n = 20; else if (G19.has(n)) o.n = 19; }
+    r -= VAL[x]; return o;
+  });
+  for (let k = 1; k < res.length; k++) if (res[k].n == null && res[k].r > 170) res[k].n = res[k - 1].n;
+  for (let k = res.length - 2; k >= 0; k--) if (res[k].n == null && res[k].r > 170) res[k].n = res[k + 1].n;
+  return res;
 }
 function compute(legs) {
   const st = { legs: legs.length, done: 0, visits: 0, darts: 0, points: 0, f9p: 0, f9d: 0, scores: [], busts: 0, s60: 0, s100: 0, s140: 0, s180: 0,
     dd: 0, outs: 0, ddKnownLegs: 0, ranges: [[2, 40], [41, 60], [61, 100], [101, 170]].map(([a, b]) => ({ a, b, att: 0, hit: 0 })),
     legDarts: [], outsVals: [], dbl: new Map(), byVisit: [], sessions: new Map(), byLegNo: [], byHour: [0, 1, 2, 3].map(() => ({ p: 0, d: 0 })),
-    picked: 0, heat: { all: new Map(), scoring: new Map(), finishing: new Map(), dbl: new Map() },
+    picked: 0, heat: { all: new Map(), scoring: new Map(), at20: new Map(), at19: new Map(), finishing: new Map(), dbl: new Map() }, leftOn: new Map(),
     byDart: [0, 1, 2].map(() => ({ n: 0, p: 0, t: 0, t20: 0, b20: 0 })), after: { t: { n: 0, h: 0 }, o: { n: 0, h: 0 } }, dblPos: [0, 1, 2].map(() => ({ att: 0, hit: 0 })), dblAim: new Map(), phase: { to: [], from: [], vis: [], sp: 0, sd: 0, fp: 0, fd: 0 }, seq: [], legSeq: [] };
   const inc = (m, k) => m.set(k, (m.get(k) || 0) + 1);
   for (const l of legs) {
@@ -1210,6 +1393,7 @@ function compute(legs) {
       if (v.b) st.busts++;
       else { if (!v.f) st.scores.push(v.s); if (v.s >= 60) st.s60++; if (v.s >= 100) st.s100++; if (v.s >= 140) st.s140++; if (v.s === 180) st.s180++; }
       if (out === "double") {
+        const lt = finishTarget(v.r); if (lt) { const e = st.leftOn.get(lt) || { n: 0, outs: 0 }; e.n++; if (v.f) e.outs++; st.leftOn.set(lt, e); }
         const di = doubleInfo(v, out);
         if (di.att) {
           st.dd += di.att; if (v.f) st.outs++;
@@ -1219,10 +1403,11 @@ function compute(legs) {
       }
       if (v.d && v.d.length) {
         st.picked++;
-        let r = v.r, prev = null;
+        let r = v.r, prev = null; const aims = inferAims(v, out);
         v.d.forEach((x, k) => {
-          inc(st.heat.all, x); inc(r > 170 ? st.heat.scoring : st.heat.finishing, x);
-          if (out === "double" && finishTarget(r) && dartAt(v, k, finishTarget(r), x)) inc(st.heat.dbl, x);
+          const a = aims[k], key = x === "M" ? (a.n && a.n !== 25 ? "O" + a.n : null) : x;
+          if (key) { inc(st.heat.all, key); if (r > 170) { inc(st.heat.scoring, key); if (a.n === 20) inc(st.heat.at20, key); if (a.n === 19) inc(st.heat.at19, key); } else inc(st.heat.finishing, key); }
+          if (a.dbl && key) inc(st.heat.dbl, key);
           if (r > 170 && k < 3) {
             const b = st.byDart[k]; b.n++; b.p += VAL[x]; if (x[0] === "T") b.t++; if (x === "T20") b.t20++; if (x === "S20" || x === "T20" || x === "D20") b.b20++;
             if (prev) { const a = prev.x === "T20" ? st.after.t : st.after.o; if (prev.sc) { a.n++; if (x === "T20") a.h++; } }
@@ -1238,8 +1423,8 @@ function compute(legs) {
     }
     (st.byLegNo[Math.min((l.n || 1) - 1, 7)] ||= { p: 0, d: 0 }); const bl = st.byLegNo[Math.min((l.n || 1) - 1, 7)]; bl.p += lp; bl.d += ld;
     if (l.done) { st.done++; st.legDarts.push(ld); st.outsVals.push(l.v[l.v.length - 1].s); }
-    const se = st.sessions.get(l.sid) || { sid: l.sid, at: l.at, p: 0, d: 0, legs: 0, ton: 0, best: null };
-    se.at = Math.min(se.at, l.at); se.p += lp; se.d += ld; se.legs++; se.ton += l.v.filter(v => !v.b && v.s >= 100).length;
+    const se = st.sessions.get(l.sid) || { sid: l.sid, at: l.at, p: 0, d: 0, legs: 0, ton: 0, max: 0, best: null };
+    se.at = Math.min(se.at, l.at); se.p += lp; se.d += ld; se.legs++; se.ton += l.v.filter(v => !v.b && v.s >= 100).length; se.max += l.v.filter(v => !v.b && v.s === 180).length;
     if (l.done) se.best = se.best == null ? ld : Math.min(se.best, ld);
     st.sessions.set(l.sid, se);
   }
@@ -1284,26 +1469,26 @@ function barChart(bars, opt = {}) {
       <text x="${(x + bw / 2).toFixed(1)}" y="${h - 5}" font-size="10" fill="#5c6067" text-anchor="middle">${esc(b.l)}</text>`; }).join("")}
     <line x1="0" x2="${w}" y1="${h - B}" y2="${h - B}" stroke="#17191c" stroke-width="1"/></svg>`;
 }
-const ringOf = x => x === "SB" || x === "DB" ? "bull" : x === "M" ? "M" : x[0];
+const ringOf = x => x === "SB" || x === "DB" ? "bull" : x === "M" ? "M" : x[0];   // "O20" = outside the board by the 20
 const inRing = (x, ring) => ring === "all" || ringOf(x) === ring;
 function boardHeat(counts, ring = "all", sel = null) {
-  const c = 170, P = (r, a) => [(c + r * Math.sin(a * Math.PI / 180)).toFixed(1), (c - r * Math.cos(a * Math.PI / 180)).toFixed(1)];
+  const c = 182, P = (r, a) => [(c + r * Math.sin(a * Math.PI / 180)).toFixed(1), (c - r * Math.cos(a * Math.PI / 180)).toFixed(1)];
   const arc = (r1, r2, a1, a2) => { const [x1, y1] = P(r2, a1), [x2, y2] = P(r2, a2), [x3, y3] = P(r1, a2), [x4, y4] = P(r1, a1); return `M${x1} ${y1}A${r2} ${r2} 0 0 1 ${x2} ${y2}L${x3} ${y3}A${r1} ${r1} 0 0 0 ${x4} ${y4}Z`; };
   const tot = sum([...counts.values()]) || 1;
   // singles are split across the two single beds, so divide by 2 to compare like with like
   const share = s => (counts.get(s) || 0) / tot;
-  const mx = Math.max(...ALL.filter(s => s !== "M" && inRing(s, ring)).map(s => ringOf(s) === "S" ? share(s) / 2 : share(s)), 1e-9);
+  const mx = Math.max(...[...ALL, ...ORDER.map(n => "O" + n)].filter(s => s !== "M" && inRing(s, ring)).map(s => ringOf(s) === "S" ? share(s) / 2 : share(s)), 1e-9);
   const fill = (x, v) => inRing(x, ring) ? col(v) : "#e6ece4";
   const stops = [[251, 240, 231], [242, 172, 120], [218, 100, 44], [140, 52, 16]];
   const col = v => { const t = Math.min(1, Math.sqrt(v / mx)) * 3, i = Math.min(2, Math.floor(t)), f = t - i; return "rgb(" + stops[i].map((s, k) => Math.round(s + (stops[i + 1][k] - s) * f)).join(",") + ")"; };
-  const rings = [[16, 80, "S", 2], [80, 96, "T", 1], [96, 132, "S", 2], [132, 146, "D", 1]];
+  const rings = [[16, 80, "S", 2], [80, 96, "T", 1], [96, 132, "S", 2], [132, 146, "D", 1], [149, 161, "O", 1]];
   let paths = "";
   ORDER.forEach((n, i) => { const a1 = i * 18 - 9, a2 = a1 + 18; rings.forEach(([r1, r2, k, dv]) => { paths += `<path d="${arc(r1, r2, a1, a2)}" fill="${fill(k + n, share(k + n) / dv)}" stroke="#fff" stroke-width=".8" data-wedge="${n}" style="cursor:pointer"/>`; }); });
-  if (sel && sel !== 25) { const i = ORDER.indexOf(sel), a1 = i * 18 - 9; paths += `<path d="${arc(16, 146, a1, a1 + 18)}" fill="none" stroke="#17191c" stroke-width="2" stroke-linejoin="round" pointer-events="none"/>`; }
-  const labels = ORDER.map((n, i) => { const [x, y] = P(158, i * 18); return `<text x="${x}" y="${y}" font-size="12" font-weight="${n === sel ? 800 : 600}" fill="${n === sel ? "#17191c" : "#5c6067"}" text-anchor="middle" dominant-baseline="central" data-wedge="${n}" style="cursor:pointer">${n}</text>`; }).join("");
-  return `<svg width="100%" viewBox="0 0 340 340" role="img" aria-label="Board heat map of where your darts landed" style="max-width:340px;display:block;margin:0 auto">
-    <circle cx="170" cy="170" r="146" fill="#fbf0e7"/>${paths}
-    <circle cx="170" cy="170" r="16" fill="${fill("SB", share("SB"))}" stroke="${sel === 25 ? "#17191c" : "#fff"}" stroke-width="${sel === 25 ? 2 : .8}" data-wedge="25" style="cursor:pointer"/><circle cx="170" cy="170" r="7" fill="${fill("DB", share("DB"))}" stroke="#fff" stroke-width=".8" data-wedge="25" style="cursor:pointer"/>${labels}</svg>
+  if (sel && sel !== 25) { const i = ORDER.indexOf(sel), a1 = i * 18 - 9; paths += `<path d="${arc(16, 161, a1, a1 + 18)}" fill="none" stroke="#17191c" stroke-width="2" stroke-linejoin="round" pointer-events="none"/>`; }
+  const labels = ORDER.map((n, i) => { const [x, y] = P(173, i * 18); return `<text x="${x}" y="${y}" font-size="12" font-weight="${n === sel ? 800 : 600}" fill="${n === sel ? "#17191c" : "#5c6067"}" text-anchor="middle" dominant-baseline="central" data-wedge="${n}" style="cursor:pointer">${n}</text>`; }).join("");
+  return `<svg width="100%" viewBox="0 0 364 364" role="img" aria-label="Board heat map of where your darts landed, with misses in a ring outside the board" style="max-width:360px;display:block;margin:0 auto">
+    <circle cx="182" cy="182" r="162" fill="none" stroke="#c9d6c7" stroke-dasharray="3 4"/><circle cx="182" cy="182" r="146" fill="#fbf0e7"/>${paths}
+    <circle cx="182" cy="182" r="16" fill="${fill("SB", share("SB"))}" stroke="${sel === 25 ? "#17191c" : "#fff"}" stroke-width="${sel === 25 ? 2 : .8}" data-wedge="25" style="cursor:pointer"/><circle cx="182" cy="182" r="7" fill="${fill("DB", share("DB"))}" stroke="#fff" stroke-width=".8" data-wedge="25" style="cursor:pointer"/>${labels}</svg>
     <div class="row small muted" style="margin-top:6px"><span>fewer</span><div style="flex:1;height:8px;border-radius:4px;background:linear-gradient(90deg,#fbf0e7,#f2ac78,#da642c,#8c3410)"></div><span>more</span></div>`;
 }
 const tile = (l, v, s = "", cls = "", kind = "") => `<div class="tile ${kind}"><span class="l">${l}</span><span class="v">${v}</span><span class="s ${cls}">${s}</span></div>`;
@@ -1315,12 +1500,14 @@ function delta(cur, prev, unit = "", better = 1) {
   return [`${d > 0 ? "+" : "−"}${f1(Math.abs(d))}${unit} on the period before`, (d * better > 0) ? "up" : "down"];
 }
 
+const STABS = [["overview", "Overview", "#1f6f4a"], ["scoring", "Scoring", "#2b7a8a"], ["finishing", "Finishing", "#d0612b"], ["accuracy", "Accuracy", "#7a54b8"], ["progress", "Progress", "#2f68b0"], ["records", "Records", "#b07d12"], ["awards", "Achievements", "#b23f73"]];
 function viewStats() {
   const p = S.stats.period, st = statsFor(p);
   const head = `<div class="between"><h1 style="margin:2px 0">Stats</h1><select style="width:auto" data-period aria-label="Time period">${PERIODS.map(([k, l]) => `<option value="${k}"${k === p ? " selected" : ""}>${l}</option>`).join("")}</select></div>
-  <div class="seg" style="margin:12px 0">${[["overview", "Overview"], ["scoring", "Scoring"], ["finishing", "Finishing"], ["accuracy", "Accuracy"], ["progress", "Progress"]].map(([k, l]) => `<button class="${S.stats.tab === k ? "on" : ""}" data-stab="${k}">${l}</button>`).join("")}</div>`;
+  <div class="tabs" style="margin:12px 0">${STABS.map(([k, l, c]) => `<button class="${S.stats.tab === k ? "on" : ""}" style="--c:${c}" data-stab="${k}">${l}</button>`).join("")}</div>`;
+  if (S.stats.tab === "awards") return head + `<p class="s13 muted" style="margin:0 0 12px">All time, whatever period is picked</p><div class="stack statbody">${statsAwards()}</div>`;
   if (!st.visits) return head + `<div class="card empty">No legs ${p === "all" ? "yet" : "in this period"}. Play a few and your stats will build up here.</div>`;
-  const body = { overview: statsOverview, scoring: statsScoring, finishing: statsFinishing, accuracy: statsAccuracy, progress: statsProgress }[S.stats.tab](st, p);
+  const body = { overview: statsOverview, scoring: statsScoring, finishing: statsFinishing, accuracy: statsAccuracy, progress: statsProgress, records: statsRecords }[S.stats.tab](st, p);
   return head + `<p class="s13 muted" style="margin:0 0 12px">${fmtN(st.legs)} legs · ${fmtN(st.visits)} visits · ${fmtN(st.darts)} darts</p><div class="stack statbody">${body}</div>`;
 }
 const BANDS = [["Under 40", 0, 39, "#c9d9cf"], ["40–59", 40, 59, "#9cbca9"], ["60–99", 60, 99, "#5f9478"], ["100–139", 100, 139, "#1f6f4a"], ["140+", 140, 180, "#e0703a"]];
@@ -1372,6 +1559,15 @@ function statsScoring(st) {
     <div class="card"><p class="h2" style="margin-bottom:4px">Most common scores</p>${top.map(([s, k]) => brow(String(s), fmtN(k), pct(k, n), k / top[0][1] * 100)).join("")}</div>
     ${bandsCard(st)}`;
 }
+function leftOnCard(st) {
+  if (!st.leftOn.size) return "";
+  const all = [...Array(20)].map((_, i) => "D" + (i + 1)).concat("DB").map(t => [t, st.leftOn.get(t) || { n: 0, outs: 0 }]);
+  const most = all.filter(([, e]) => e.n).sort((a, b) => b[1].n - a[1].n).slice(0, 5), least = all.slice().sort((a, b) => a[1].n - b[1].n || DBL_ORDER(a[0]) - DBL_ORDER(b[0])).slice(0, 5);
+  const row = ([t, e]) => `<div class="kv"><span><b style="color:var(--ink)">${segLabel(t)}</b> <span class="small">${e.n ? `out ${pct(e.outs, e.n)}` : ""}</span></span><b>${e.n ? e.n + "×" : "never"}</b></div>`;
+  return `<div class="card"><p class="h2">Doubles you're left on</p><p class="sub" style="margin-bottom:6px">Visits starting on each double, and how often you took it out that visit</p>
+    <div class="two"><div><p class="s13 muted" style="margin:4px 0">Most</p>${most.map(row).join("")}</div><div><p class="s13 muted" style="margin:4px 0">Least</p>${least.map(row).join("")}</div></div></div>`;
+}
+const DBL_ORDER = t => t === "DB" ? 99 : 21 - +t.slice(1);
 function statsFinishing(st) {
   const finished = st.legDarts.length;
   const dblAll = [...st.dbl.entries()].sort((a, b) => b[1].att - a[1].att);
@@ -1385,9 +1581,11 @@ function statsFinishing(st) {
       ${tile("Checkout", st.dd ? pct(st.outs, st.dd) : "–", st.dd ? `${st.outs} of ${st.dd} darts` : "", "", "hero")}
       ${tile("Darts at double per leg", st.outs ? f1(st.dd / st.outs) : "–", "to finish")}
       ${tile("Highest checkout", st.highOut ?? "–", st.outsVals.filter(x => x > 100).length ? `${st.outsVals.filter(x => x > 100).length} ton-plus finishes` : "")}
-      ${tile("Darts per leg", st.dpl == null ? "–" : f1(st.dpl), finished ? `${finished} legs finished` : "")}</div>
+      ${tile("Darts per leg", st.dpl == null ? "–" : f1(st.dpl), finished ? `${finished} legs finished` : "")}
+      ${(() => { const q = [...st.dbl.entries()].filter(([, e]) => e.att >= 5).map(([t, e]) => [t, e, e.hit / e.att]).sort((a, b) => b[2] - a[2]);
+        return q.length >= 2 ? tile("Best double", segLabel(q[0][0]), `${pct(q[0][1].hit, q[0][1].att)} of ${q[0][1].att} darts`, "", "good") + tile("Worst double", segLabel(q[q.length - 1][0]), `${pct(q[q.length - 1][1].hit, q[q.length - 1][1].att)} of ${q[q.length - 1][1].att} darts`, "", "bad") : ""; })()}</div>
     ${rangesCard(st)}
-    <div class="card"><p class="h2">How darts at a double are counted</p><p class="sub">You tell the app. Any visit that gets down to 50 or less asks how many darts were at a double, or which ones if you picked the darts. It only skips asking when the answer is obvious: three misses, only going just inside the double (like 20 or 30 from 40), or a checkout where the other darts did the same.</p></div>
+    ${leftOnCard(st)}
     <div class="card"><p class="h2">Doubles</p><p class="sub" style="margin-bottom:6px">From visits where you picked the darts</p>
       ${dbl.length ? `<table class="tbl"><tr><th>Double</th><th>Darts</th><th>Hit</th><th>Rate</th></tr>${dbl.map(([t, e]) => `<tr><td><b>${t === "Others" ? "Others" : segLabel(t)}</b></td><td class="muted">${e.att}</td><td class="muted">${e.hit}</td><td><b>${pct(e.hit, e.att)}</b></td></tr>`).join("")}</table>` : `<p class="empty" style="padding:12px">No darts at a double picked yet.</p>`}</div>
     ${dblAimCard(st)}
@@ -1397,7 +1595,7 @@ function statsFinishing(st) {
     ${topOut.length ? `<div class="card"><p class="h2" style="margin-bottom:4px">Your checkouts</p>${topOut.map(([s, k]) => brow(String(s), k + "×", "", k / topOut[0][1] * 100)).join("")}</div>` : ""}
     <div class="card"><p class="h2" style="margin-bottom:4px">Busts</p>${kv("Busts", fmtN(st.busts))}${kv("Per finished leg", finished ? f2(st.busts / finished) : "–")}</div>`;
 }
-const segName = x => x === "M" ? "Miss" : x === "SB" ? "25" : x === "DB" ? "Bull" : ({ S: "Single ", D: "Double ", T: "Treble " }[x[0]]) + x.slice(1);
+const segName = x => x === "M" ? "Miss" : x === "SB" ? "25" : x === "DB" ? "Bull" : x[0] === "O" ? "Outside " + x.slice(1) : ({ S: "Single ", D: "Double ", T: "Treble " }[x[0]]) + x.slice(1);
 function byDartTable(rows, cols) {
   return `<table class="tbl"><tr><th></th>${cols.map((_, i) => `<th>Dart ${i + 1}</th>`).join("")}</tr>${rows.map(([l, f]) => `<tr><td class="muted">${l}</td>${cols.map(c => `<td><b>${c.n || c.att ? f(c) : "–"}</b></td>`).join("")}</tr>`).join("")}</table>`;
 }
@@ -1408,30 +1606,30 @@ function numberCard(m, n, tot) {
     return `<div class="card"><div class="between"><p class="h2">The bull</p><button class="chip" data-act="num-clear">Clear</button></div><p class="sub" style="margin-bottom:6px">${fmtN(b + o)} darts, ${pct(b + o, tot)} of the darts shown</p>
       ${[["Bull", b], ["25", o]].map(([l, k]) => `<div class="brow"><span class="lab">${l}</span><div class="bar warm"><i style="width:${(b + o) ? k / (b + o) * 100 : 0}%"></i></div><span class="n">${fmtN(k)}</span><span class="p">${pct(k, b + o)}</span></div>`).join("")}</div>`;
   }
-  const [l, r] = nbrs(n), bed = x => g("S" + x) + g("T" + x) + g("D" + x), here = bed(n);
-  const rows = [["Treble " + n, g("T" + n)], ["Single " + n, g("S" + n)], ["Double " + n, g("D" + n)]];
+  const [l, r] = nbrs(n), bed = x => g("S" + x) + g("T" + x) + g("D" + x), here = bed(n) + g("O" + n);
+  const rows = [["Treble " + n, g("T" + n)], ["Single " + n, g("S" + n)], ["Double " + n, g("D" + n)], ["Outside", g("O" + n)]];
   return `<div class="card"><div class="between"><p class="h2">The ${n}</p><button class="chip" data-act="num-clear">Clear</button></div>
-    <p class="sub" style="margin-bottom:6px">${fmtN(here)} darts in the ${n} bed, ${pct(here, tot)} of the darts shown</p>
+    <p class="sub" style="margin-bottom:6px">${fmtN(here)} darts in the ${n} bed or just outside it, ${pct(here, tot)} of the darts shown</p>
     ${rows.map(([lab, k]) => `<div class="brow"><span class="lab">${lab}</span><div class="bar warm"><i style="width:${here ? k / here * 100 : 0}%"></i></div><span class="n">${fmtN(k)}</span><span class="p">${pct(k, here)}</span></div>`).join("")}
     <p class="s13 muted" style="margin:10px 0 4px">Either side</p>
     ${[[l, bed(l)], [r, bed(r)]].map(([x, k]) => `<div class="brow"><span class="lab">${x} bed</span><div class="bar"><i style="width:${Math.max(here, 1) ? Math.min(100, k / Math.max(here, 1) * 100) : 0}%"></i></div><span class="n">${fmtN(k)}</span><span class="p">${pct(k, tot)}</span></div>`).join("")}</div>`;
 }
 function statsAccuracy(st) {
   if (!st.picked) return `<div class="card empty">Accuracy builds from the darts you pick after each visit. Pick the darts on a few visits and this fills in.</div>`;
-  const F = [["scoring", "Scoring"], ["finishing", "170 and below"], ["dbl", "At a double"], ["all", "All"]];
+  const F = [["scoring", "Scoring"], ["at20", "At 20"], ["at19", "At 19"], ["dbl", "At a double"], ["finishing", "170 and below"], ["all", "All"]];
   const f = S.stats.heat || "scoring", m = st.heat[f], tot = sum([...m.values()]);
   const ring = S.stats.ring || "all", num = S.stats.num || null;
   const top = [...m.entries()].filter(([x]) => inRing(x, ring)).sort((a, b) => b[1] - a[1]).slice(0, 8);
-  const desc = { scoring: "Darts thrown with more than 170 left", finishing: "Darts thrown on 170 or less", dbl: "Darts thrown when you were on a finish", all: "Every dart you've picked" }[f];
+  const desc = { scoring: "Darts thrown with more than 170 left", at20: "Scoring darts at the 20, worked out from where each landed", at19: "Scoring darts at the 19, worked out from where each landed", finishing: "Darts thrown on 170 or less", dbl: "Darts you marked as at a double; misses sit outside the double you were on", all: "Every dart you've picked" }[f];
   const D = st.byDart, A = st.after;
   return `<div class="card stack" style="gap:10px"><p class="h2">Where your darts land</p>
       <div class="seg">${F.map(([k, l]) => `<button class="${k === f ? "on" : ""}" data-heat="${k}">${l}</button>`).join("")}</div>
-      <p class="sub" style="margin:0">${desc} · ${fmtN(tot)} darts, from the darts you picked (${pct(st.picked, st.visits)} of visits)</p>
-      <div class="chips">${[["all", "All rings"], ["T", "Trebles"], ["D", "Doubles"], ["S", "Singles"], ["bull", "Bull"]].map(([k, l]) => `<button class="chip${k === ring ? " on" : ""}" data-ring="${k}">${l}</button>`).join("")}</div>
+      <p class="sub" style="margin:0">${desc} · ${fmtN(tot)} darts. The dotted ring is misses off the board.</p>
+      <div class="chips">${[["all", "All rings"], ["T", "Trebles"], ["D", "Doubles"], ["S", "Singles"], ["bull", "Bull"], ["O", "Outside"]].map(([k, l]) => `<button class="chip${k === ring ? " on" : ""}" data-ring="${k}">${l}</button>`).join("")}</div>
       ${tot ? boardHeat(m, ring, num) : `<p class="empty">No darts here yet.</p>`}
       <p class="sub" style="margin:0;text-align:center">${num ? "Tap the number again to clear it." : "Tap a number on the board to look at it on its own."}</p></div>
     ${tot && num ? numberCard(m, num, tot) : ""}
-    ${tot && top.length ? `<div class="card"><p class="h2" style="margin-bottom:4px">Most hit${ring === "all" ? "" : ` · ${{ T: "trebles", D: "doubles", S: "singles", bull: "bull" }[ring]}`}</p>${top.map(([x, k]) => `<div class="brow"><span class="lab">${segName(x)}</span><div class="bar warm"><i style="width:${k / top[0][1] * 100}%"></i></div><span class="n">${fmtN(k)}</span><span class="p">${pct(k, tot)}</span></div>`).join("")}</div>` : ""}
+    ${tot && top.length ? `<div class="card"><p class="h2" style="margin-bottom:4px">Most hit${ring === "all" ? "" : ` · ${{ T: "trebles", D: "doubles", S: "singles", bull: "bull", O: "outside" }[ring]}`}</p>${top.map(([x, k]) => `<div class="brow"><span class="lab">${segName(x)}</span><div class="bar warm"><i style="width:${k / top[0][1] * 100}%"></i></div><span class="n">${fmtN(k)}</span><span class="p">${pct(k, tot)}</span></div>`).join("")}</div>` : ""}
     ${D[0].n ? `<div class="card"><p class="h2">By dart in the visit</p><p class="sub" style="margin-bottom:6px">Scoring darts only (more than 170 left)</p>
       ${byDartTable([["Points per dart", c => f2(c.p / c.n)], ["Treble 20", c => pct(c.t20, c.n)], ["Any treble", c => pct(c.t, c.n)], ["20 bed (S, T or D20)", c => pct(c.b20, c.n)], ["Darts", c => fmtN(c.n)]], D)}
       ${A.t.n >= 5 && A.o.n >= 5 ? `<p class="sub" style="margin-top:8px">After a T20, your next dart hits T20 ${pct(A.t.h, A.t.n)} of the time (${A.t.h} of ${A.t.n}), against ${pct(A.o.h, A.o.n)} after any other dart.</p>` : ""}</div>` : ""}`;
@@ -1477,6 +1675,18 @@ function dblAimCard(st) {
     <div>${rows.map(([lab, k, c]) => `<div class="brow"><span class="dot" style="background:${col[c]}"></span><span class="grow">${lab}</span><span class="n">${fmtN(k)}</span><span class="p">${pct(k, tot)}</span></div>`).join("")}</div>
     ${miss >= 4 ? `<p class="sub" style="margin:0">Of your misses at ${segLabel(t)}, ${pct(ins, miss)} went inside, ${pct(out, miss)} off the board and ${pct(wide, miss)} wide.</p>` : ""}</div>`;
 }
+/** Recent form against your all-time numbers: green where you're doing better, red where you're doing worse. */
+function formCard() {
+  const A = statsFor("all"); if (!A.visits) return "";
+  const W = [["7", "7 days"], ["30", "30 days"], ["year", "This year"]].map(([k, l]) => [l, statsFor(k)]);
+  const M = [["3-dart average", s => s.avg, 1, f1, .5], ["First 9", s => s.f9, 1, f1, .5], ["Checkout", s => s.dd ? s.outs / s.dd * 100 : null, 1, v => f1(v) + "%", 1], ["Darts per leg", s => s.dpl, -1, f1, .3], ["100+ per leg", s => s.legs ? s.s100 / s.legs : null, 1, f2, .03]];
+  const cell = (s, [, f, dir, fmt, eps]) => { const v = s.visits ? f(s) : null, a = f(A); if (v == null) return `<td class="muted">–</td>`; const d = (v - a) * dir; const c = a == null || Math.abs(v - a) < eps ? "" : d > 0 ? "up" : "down"; return `<td><span class="fm ${c}">${fmt(v)}${c ? `<i>${c === "up" ? "▲" : "▼"}</i>` : ""}</span></td>`; };
+  const legs = liveLegs().filter(l => l.done).sort((a, b) => a.at - b.at).slice(-10);
+  return `<div class="card"><p class="h2">Form</p><p class="sub" style="margin-bottom:8px">Recent numbers against your all-time ones</p>
+    <table class="tbl form"><tr><th></th><th>All time</th>${W.map(([l]) => `<th>${l}</th>`).join("")}</tr>
+    ${M.map(m => `<tr><td class="muted">${m[0]}</td><td><b>${m[1](A) == null ? "–" : m[3](m[1](A))}</b></td>${W.map(([, s]) => cell(s, m)).join("")}</tr>`).join("")}</table>
+    ${legs.length ? `<p class="s13 muted" style="margin:12px 0 6px">Last ${legs.length} legs, newest on the right</p><div class="guide">${legs.map(l => { const a = avgOf([l]); return `<span class="${a >= A.avg ? "up" : "down"}" title="${fmtDate(l.at)}">${Math.round(a)}</span>`; }).join("")}</div><p class="sub" style="margin-top:6px">Green beats your all-time average of ${f1(A.avg)}, red is below it.</p>` : ""}</div>`;
+}
 function statsProgress(st, p) {
   const all = statsFor("all");
   const sess = st.sessList.filter(s => s.d >= 9);
@@ -1487,7 +1697,7 @@ function statsProgress(st, p) {
   const bestLegAvg = liveLegs().filter(l => l.done).map(l => ({ l, a: avgOf([l]) })).sort((a, b) => b.a - a.a)[0];
   const mostTon = all.sessList.slice().sort((a, b) => b.ton - a.ton)[0];
   const byLeg = st.byLegNo.map((x, i) => x ? { l: i === 7 ? "8+" : "L" + (i + 1), v: x.d ? x.p / x.d * 3 : 0 } : null).filter(Boolean); byLeg.forEach(b => b.t = f1(b.v));
-  return `<div class="card"><p class="h2">Rolling average</p><p class="sub">Average over your last 10 legs, leg by leg</p><div style="margin-top:8px">${lineChart(roll, { label: "Rolling 10-leg average", need: "Shows after 11 legs in this period.", xl: legsSorted.length ? [fmtDate(legsSorted[W - 1]?.at || legsSorted[0].at), fmtDate(legsSorted[legsSorted.length - 1].at)] : null })}</div></div>
+  return `${formCard()}<div class="card"><p class="h2">Rolling average</p><p class="sub">Average over your last 10 legs, leg by leg</p><div style="margin-top:8px">${lineChart(roll, { label: "Rolling 10-leg average", need: "Shows after 11 legs in this period.", xl: legsSorted.length ? [fmtDate(legsSorted[W - 1]?.at || legsSorted[0].at), fmtDate(legsSorted[legsSorted.length - 1].at)] : null })}</div></div>
     <div class="card"><p class="h2">Average by session</p><div style="margin-top:8px">${lineChart(sess.map(s => s.p / s.d * 3), { mean: st.avg, label: "Average by session", need: "Shows once you have two sessions.", xl: sess.length > 1 ? [fmtDate(sess[0].at), fmtDate(sess[sess.length - 1].at)] : null })}</div></div>
     <div class="card"><p class="h2" style="margin-bottom:4px">Personal bests (all time)</p>
       ${kv("Fewest darts in a leg", all.best ?? "–")}${kv("Highest checkout", all.highOut ?? "–")}
@@ -1497,8 +1707,7 @@ function statsProgress(st, p) {
       ${kv("180s", all.s180)}</div>
     ${byLeg.length > 1 ? `<div class="card"><p class="h2">Average by leg of the session</p><p class="sub">Does your game hold up as a session goes on?</p><div style="margin-top:8px">${barChart(byLeg, { label: "Average by leg number" })}</div></div>` : ""}
     ${cpuCard()}
-    ${phaseCard(st)}
-    ${streakCard(st)}`;
+    ${phaseCard(st)}`;
 }
 
 function cpuCard() {
@@ -1511,6 +1720,93 @@ function cpuCard() {
   const tw = sum(rows.map(r => r[1].mw)), tl = sum(rows.map(r => r[1].ml));
   return `<div class="card"><p class="h2">Against the CPU (all time)</p><p class="sub" style="margin-bottom:6px">Matches won ${tw} · lost ${tl}</p>
     <table class="tbl"><tr><th>Level</th><th>Matches</th><th>Legs</th><th>Your avg</th></tr>${rows.map(([k, e]) => `<tr><td><b>${k}</b></td><td>${e.mw}–${e.ml}</td><td class="muted">${e.lw}–${e.ll}</td><td><b>${e.legs.length ? f1(avgOf(e.legs) || 0) : "–"}</b></td></tr>`).join("")}</table></div>`;
+}
+
+function statsRecords(st, p) {
+  const legs = legsWithin(p).filter(l => l.v.length);
+  const info = legs.map(l => ({ l, darts: legDarts(l), avg: avgOf([l]), f9: first9([l]), dd: sum(l.v.map(v => doubleInfo(v, l.out).att)), onFin: l.v.filter(v => v.r <= 170 && canFinish(v.r, l.out)).length, busts: l.v.filter(v => v.b).length, out: l.done ? l.v[l.v.length - 1].s : null }));
+  const done = info.filter(x => x.l.done);
+  const pick = (arr, f, hi) => arr.filter(x => f(x) != null).reduce((a, b) => !a || (hi ? f(b) > f(a) : f(b) < f(a)) ? b : a, null);
+  const rec = (lab, x, val) => x ? `<button class="rec" data-hleg="${x.l.id}"><span>${lab}</span><b>${val(x)}</b><small>${fmtDateY(x.l.at)}</small></button>` : "";
+  const srec = (lab, x, val) => x ? `<div class="rec"><span>${lab}</span><b>${val(x)}</b><small>${fmtDateY(x.at)}</small></div>` : "";
+  const sess = st.sessList, s3 = sess.filter(x => x.legs >= 3), sa = x => x.p / x.d * 3;
+  const days = new Map(); legs.forEach(l => { const k = new Date(l.at).toDateString(); const e = days.get(k) || { at: l.at, n: 0 }; e.n++; days.set(k, e); });
+  const bigDay = [...days.values()].sort((a, b) => b.n - a.n)[0];
+  return `<div class="card"><p class="h2" style="margin-bottom:4px">Legs</p>
+      ${rec("Best leg", pick(done, x => x.darts, false), x => x.darts + " darts")}${rec("Worst leg", pick(done, x => x.darts, true), x => x.darts + " darts")}
+      ${rec("Best leg average", pick(done, x => x.avg, true), x => f1(x.avg))}${rec("Worst leg average", pick(done, x => x.avg, false), x => f1(x.avg))}
+      ${rec("Best first 9", pick(info.filter(x => x.l.v.length >= 3), x => x.f9, true), x => f1(x.f9))}
+      ${rec("Highest checkout", pick(done, x => x.out, true), x => x.out)}
+      ${rec("Most darts at a double", pick(info, x => x.dd || null, true), x => x.dd)}${rec("Most visits on a finish", pick(info, x => x.onFin || null, true), x => x.onFin)}
+      ${rec("Most busts in a leg", pick(info, x => x.busts || null, true), x => x.busts)}</div>
+    <div class="card"><p class="h2" style="margin-bottom:4px">Sessions</p>
+      ${srec("Best session average", s3.reduce((a, b) => !a || sa(b) > sa(a) ? b : a, null), x => f1(sa(x)))}${srec("Worst session average", s3.reduce((a, b) => !a || sa(b) < sa(a) ? b : a, null), x => f1(sa(x)))}
+      ${srec("Most 100+ in a session", sess.reduce((a, b) => !a || b.ton > a.ton ? b : a, null), x => x.ton)}${srec("Most 180s in a session", sess.filter(x => x.max).reduce((a, b) => !a || b.max > a.max ? b : a, null), x => x.max)}
+      ${srec("Most legs in a session", sess.reduce((a, b) => !a || b.legs > a.legs ? b : a, null), x => x.legs)}${srec("Most legs in a day", bigDay, x => x.n)}</div>
+    ${streakCard(st)}
+    <p class="sub" style="text-align:center">Tap a leg record to see the leg.</p>`;
+}
+
+/* ===================== achievements ===================== */
+const TIERS = ["Bronze", "Silver", "Gold"];
+function achievements() {
+  const A = statsFor("all"), legs = liveLegs().filter(l => l.v.length).sort((a, b) => a.at - b.at);
+  let bigOut = 0, fish = 0, bull = 0, sub21 = 0, sub18 = 0, sub12 = 0, oneDart = 0, hat = 0, shang = 0, darts = 0;
+  const outsOn = new Set(), days = new Set();
+  legs.forEach(l => {
+    days.add(new Date(l.at).toDateString()); let run = 0;
+    l.v.forEach(v => {
+      darts += dartsOf(v);
+      if (!v.b && v.s >= 100) { run++; if (run === 3) hat++; } else run = 0;
+      if (v.f) {
+        if (v.s >= 100) bigOut++; if (v.s === 170) fish++;
+        const last = v.d && v.d.length ? v.d[v.d.length - 1] : (v.du === 1 ? finishTarget(v.r) : null);
+        if (last) { outsOn.add(last); if (last === "DB") bull++; }
+      }
+      if (v.d && v.d.length === 3 && new Set(v.d.map(segNum)).size === 1 && new Set(v.d.map(x => x[0])).size === 3 && !v.d.includes("M")) shang++;
+    });
+    if (l.done) { const d = legDarts(l); if (d <= 21) sub21++; if (d <= 18) sub18++; if (d <= 12) sub12++; if (l.out === "double" && sum(l.v.map(v => doubleInfo(v, l.out).att)) === 1) oneDart++; }
+  });
+  const bestSess = Math.max(0, ...A.sessList.filter(x => x.legs >= 3).map(x => x.p / x.d * 3));
+  const won = new Map(); liveLegs().filter(l => l.m && l.m.res === "won").forEach(l => won.set(l.m.id, { lvl: l.m.lvl, n: (won.get(l.m.id)?.n || 0) + 1, first: l.m.first }));
+  const beat = Math.max(0, ...[...won.values()].filter(x => x.n >= x.first).map(x => x.lvl));
+  const run60 = longestRun(A.seq, v => !v.b && v.s >= 60);
+  return [
+    ["Scoring", [
+      ["Maximum", "Hit 180s", A.s180, [1, 10, 50]],
+      ["Ton machine", "100+ visits", A.s100, [25, 250, 1000]],
+      ["Ton-forty club", "140+ visits", A.s140, [10, 100, 500]],
+      ["Hat-trick", "Three 100+ visits in a row", hat, [1, 5, 20]],
+      ["Steady", "Longest run of 60+ visits", run60, [10, 20, 40]],
+      ["Shanghai", "Single, double and treble of one number in a visit", shang, [1]]]],
+    ["Finishing", [
+      ["Big finish", "Checkouts of 100+", bigOut, [1, 10, 50]],
+      ["The big fish", "Check out 170", fish, [1]],
+      ["Bullseye", "Check out on the bull", bull, [1, 10, 25]],
+      ["Round the board", "Check out on different doubles (bull counts)", outsOn.size, [7, 14, 21]],
+      ["Clinical", "Legs won with your only dart at a double", oneDart, [5, 25, 100]]]],
+    ["Legs", [
+      ["Quick leg", "Legs of 21 darts or fewer", sub21, [1, 10, 50]],
+      ["Tidy", "Legs of 18 darts or fewer", sub18, [1, 5, 20]],
+      ["Nine-dart dream", "A leg in 12 darts or fewer", sub12, [1]],
+      ["Session high", "Best session average (3+ legs)", Math.floor(bestSess), [60, 70, 80]]]],
+    ["Commitment", [
+      ["Marathon", "Legs played", legs.length, [50, 500, 2000]],
+      ["Arm of steel", "Darts thrown", darts, [10000, 50000, 150000]],
+      ["Regular", "Days played", days.size, [10, 50, 150]],
+      ["Beat the machine", "Beat the CPU in a match, by level", beat, [60, 80, 100]]]],
+  ];
+}
+function statsAwards() {
+  const cats = achievements(); let got = 0, gold = 0, n = 0;
+  const html = cats.map(([cat, list]) => `<div class="card"><p class="h2" style="margin-bottom:6px">${cat}</p>${list.map(([name, desc, val, tiers]) => {
+    n++; const lvl = tiers.filter(t => val >= t).length, tier = tiers.length === 1 ? (lvl ? 2 : -1) : lvl - 1; if (lvl) got++; if (tier === 2) gold++;
+    const next = tiers[lvl], prev = lvl ? tiers[lvl - 1] : 0, w = next ? Math.min(100, (val - prev) / (next - prev) * 100) : 100;
+    return `<div class="ach${lvl ? "" : " locked"}"><div class="medal t${tier}" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="1" fill="currentColor"/></svg></div>
+      <div class="grow"><div class="between"><b>${name}</b><span class="small ${lvl ? "" : "muted"}">${lvl ? (tiers.length === 1 ? "Done" : TIERS[tier]) : "Locked"}</span></div>
+      <p class="sub" style="margin:1px 0 6px">${desc} · ${fmtN(val)}${next ? ` of ${fmtN(next)}` : ""}</p>${next ? `<div class="bar"><i style="width:${w}%"></i></div>` : ""}</div></div>`;
+  }).join("")}</div>`).join("");
+  return `<div class="tiles">${tile("Unlocked", `${got}/${n}`, "achievements")}${tile("Gold", gold, "top tier", "", "gold")}</div>${html}`;
 }
 
 /* ===================== history ===================== */
@@ -1672,8 +1968,8 @@ document.addEventListener("click", e => {
   if (d.popt != null && P) { chooseCombo(+d.popt); return; }
   if (d.pord != null && P) { tapOrder(+d.pord); return; }
   if (d.bmult && P) { P.b.mult = d.bmult; drawPicker(); return; }
-  if ((d.bnum || d.bseg) && P) { if (P.b.darts.length >= 3) { toast("Three darts already: tap a dart to clear it"); return; } const s = d.bseg || ((d.bnum && P.b.mult) + d.bnum); P.b.darts.push(s); P.b.mult = "S"; drawPicker(); return; }
-  if (d.bslot != null && P) { P.b.darts = P.b.darts.slice(0, +d.bslot); drawPicker(); return; }
+  if ((d.bnum || d.bseg) && P) { if (P.b.darts.length >= 3 || P.auto || P.mis) return; const x = d.bseg || ((d.bnum && P.b.mult) + d.bnum); P.b.darts.push(x); P.b.mult = "S"; sfx("click"); buildCheck(); return; }
+  if (d.bslot != null && P) { P.b.darts = P.b.darts.slice(0, +d.bslot); P.mis = null; P.auto = false; drawPicker(); return; }
   if (d.dsel != null && P) { const k = +d.dsel; P.sel[k] = !P.sel[k]; drawQuestions(); return; }
   if (d.q && P) { P[d.q] = +d.qv; if (d.q === "du" && P.dd != null && P.dd > P.du) P.dd = null; drawQuestions(); return; }
   const a = d.act; if (!a) return;
@@ -1704,8 +2000,9 @@ document.addEventListener("click", e => {
   else if (a === "p-build") { P.step = "build"; P.b = { mult: "S", darts: [] }; drawPicker(); }
   else if (a === "b-back" || a === "p-back") { P.step = "list"; drawPicker(); }
   else if (a === "p-reset") { P.used = []; P.order = []; P.auto = false; drawPicker(); }
-  else if (a === "b-clear") { P.b.darts = []; drawPicker(); }
-  else if (a === "b-save") { if (!buildOk()) return; P.v.d = P.b.darts.slice(); if (P.bust) P.v.s = sum(P.v.d.map(x => VAL[x])); askOrSave(leg, P.v, true); }
+  else if (a === "b-clear") { P.b.darts = []; P.mis = null; P.auto = false; drawPicker(); }
+  else if (a === "mis-use") { const v = P.v, e = P.mis; v.s = e.s; v.d = e.d; v.f = e.f || undefined; v.b = e.b || undefined; if (!v.f) delete v.du; P.mis = null; askOrSave(leg, v, true); }
+  else if (a === "mis-fix") { P.b.darts.pop(); P.mis = null; drawPicker(); }
   else if (a === "p-skip") askOrSave(leg, P.v, false);
   else if (a === "q-save") {
     const v = P.v;
@@ -1731,7 +2028,7 @@ document.addEventListener("click", e => {
   else if (a === "gh-off") { ghSave(null); gh.state = "off"; render(); toast("GitHub sync turned off on this device"); }
 });
 document.addEventListener("change", e => {
-  if (e.target.matches("[data-period]")) { S.stats.period = e.target.value; render(); }
+  if (e.target.matches("[data-period]")) { S.stats.period = S.set.period = e.target.value; saveSettings(); render(); }
   if (e.target.id === "importFile" && e.target.files[0]) { importJSON(e.target.files[0]); e.target.value = ""; }
 });
 document.addEventListener("keydown", e => {
@@ -1742,6 +2039,7 @@ document.addEventListener("keydown", e => {
 /* ===================== boot ===================== */
 async function boot() {
   try { Object.assign(S.set, JSON.parse(localStorage.getItem(LS_SET) || "{}")); } catch (e) {}
+  if (S.set.period) S.stats.period = S.set.period;
   try { Object.assign(S.meta, JSON.parse(localStorage.getItem(LS_META) || "{}")); } catch (e) {}
   try { idb = await openIDB(); mergeLegs(await idbAll()); } catch (e) { idb = null; }
   let mirror = []; try { mirror = JSON.parse(localStorage.getItem(LS_LEGS) || "[]"); } catch (e) {}
