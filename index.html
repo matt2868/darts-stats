@@ -3,17 +3,18 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#f5f5f2">
+<meta name="theme-color" content="#e7eee6">
 <title>Darts Stats</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
 <style>
 :root{
-  --bg:#f6f4ef; --card:#ffffff; --line:#e6e2d9; --line2:#efece5; --ink:#17191c; --muted:#5c6067; --faint:#a3a6ab;
+  --bg:#e7eee6; --card:#ffffff; --line:#d3ded1; --line2:#e6ece4; --ink:#14211a; --muted:#56635a; --faint:#9aa79d;
+  --disp:"Bricolage Grotesque",system-ui,sans-serif; --nav:#183a2a;
   --acc:#1f6f4a; --acc-soft:#e3efe7; --acc-mid:#5f9478; --acc-line:#c6ddcd;
   --warm:#e0703a; --warm-dark:#b04a17; --warm-soft:#fcebe0; --warm-line:#f3cdb3;
   --red:#b42318; --red-soft:#fbeae8;
@@ -21,12 +22,12 @@
 }
 *{box-sizing:border-box}
 html,body{margin:0;height:100%}
-body{background:var(--bg);color:var(--ink);font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;font-variant-numeric:tabular-nums;-webkit-tap-highlight-color:transparent;-webkit-font-smoothing:antialiased}
+body{background:var(--bg);color:var(--ink);font-family:"DM Sans",system-ui,-apple-system,"Segoe UI",sans-serif;font-variant-numeric:tabular-nums;-webkit-tap-highlight-color:transparent;-webkit-font-smoothing:antialiased}
 button,input,select{font:inherit;color:inherit}
 button{cursor:pointer}
 #app{max-width:560px;margin:0 auto;min-height:100%;padding:14px 16px calc(var(--nav-h) + var(--safe-b) + 16px)}
 #app.play{height:100%;min-height:0;display:flex;flex-direction:column;gap:10px;padding-bottom:calc(var(--nav-h) + var(--safe-b) + 10px)}
-h1{font-size:26px;font-weight:700;margin:2px 0 12px}
+h1{font-family:var(--disp);font-size:31px;font-weight:800;letter-spacing:-.02em;margin:2px 0 12px}
 .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px}
 .stack{display:flex;flex-direction:column;gap:12px}
 .row{display:flex;gap:8px;align-items:center}
@@ -42,10 +43,10 @@ h1{font-size:26px;font-weight:700;margin:2px 0 12px}
 .grow{flex:1}
 .chip{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:7px 12px;font-size:13px;font-weight:500;white-space:nowrap}
 .chip.on{background:var(--acc);border-color:var(--acc);color:#fff}
-.seg{display:flex;gap:4px;background:#ebebe6;border-radius:10px;padding:3px;overflow-x:auto;scrollbar-width:none}
+.seg{display:flex;gap:4px;background:rgba(31,111,74,.09);border-radius:999px;padding:4px;overflow-x:auto;scrollbar-width:none}
 .seg::-webkit-scrollbar{display:none}
-.seg button{flex:1;border:0;background:transparent;border-radius:8px;padding:8px 8px;font-size:13px;font-weight:500;white-space:nowrap}
-.seg button.on{background:#fff;font-weight:600;box-shadow:0 1px 2px rgba(0,0,0,.06)}
+.seg button{flex:1;border:0;background:transparent;border-radius:999px;padding:8px 10px;font-size:13px;font-weight:600;white-space:nowrap;color:var(--muted)}
+.seg button.on{background:var(--acc);color:#fff;box-shadow:0 2px 6px rgba(31,111,74,.25)}
 .tiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 .tile{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;display:flex;flex-direction:column;gap:2px;min-width:0}
 .tile .l{font-size:13px;color:var(--muted)}
@@ -73,7 +74,7 @@ h1{font-size:26px;font-weight:700;margin:2px 0 12px}
 .tbl td{text-align:right;padding:7px 0;border-bottom:1px solid var(--line2)}
 .tbl tr:last-child td{border-bottom:0}
 .empty{padding:28px 14px;text-align:center;color:var(--muted);font-size:14px;line-height:1.5}
-svg text{font-family:Inter,system-ui,sans-serif}
+svg text{font-family:"DM Sans",system-ui,sans-serif}
 
 /* play */
 .p-head{display:flex;justify-content:space-between;align-items:center;min-height:34px}
@@ -94,16 +95,18 @@ svg text{font-family:Inter,system-ui,sans-serif}
 .entry .v{font-size:36px;font-weight:700}
 .entry .v.ph{color:var(--faint)}
 .keypad{flex:1;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-auto-rows:minmax(48px,1fr);gap:8px;min-height:220px}
-.keypad button{border:1px solid var(--line);background:var(--card);border-radius:12px;font-size:24px;font-weight:500}
+.keypad button{border:1px solid var(--line);background:var(--card);border-radius:14px;font-family:var(--disp);font-size:27px;font-weight:600;box-shadow:0 3px 0 var(--line)}
+.keypad button:active:not(:disabled){transform:translateY(2px);box-shadow:0 1px 0 var(--line)}
 .keypad button:active{background:var(--line2)}
 .keypad .fn{font-size:15px;color:var(--muted);background:var(--bg)}
-.keypad .go{font-size:15px;font-weight:600;background:var(--acc);border-color:var(--acc);color:#fff}
+.keypad .go{font-family:"DM Sans",sans-serif;font-size:16px;font-weight:700;background:var(--acc);border-color:var(--acc);color:#fff;box-shadow:0 3px 0 #164f35}
 
 /* nav */
-#nav{position:fixed;left:0;right:0;bottom:0;background:rgba(255,255,255,.96);backdrop-filter:blur(8px);border-top:1px solid var(--line);padding-bottom:var(--safe-b);z-index:20}
+#nav{position:fixed;left:0;right:0;bottom:0;background:var(--nav);padding-bottom:var(--safe-b);z-index:20;border-radius:18px 18px 0 0;box-shadow:0 -4px 18px rgba(20,33,26,.12)}
 #nav .in{max-width:560px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr);height:var(--nav-h)}
-#nav button{border:0;background:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:11px;font-weight:500;color:var(--muted)}
-#nav button.on{color:var(--acc);font-weight:600}
+#nav button{border:0;background:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:11px;font-weight:600;color:#a9c4b3;position:relative}
+#nav button.on{color:#f6b98c}
+#nav button.on::after{content:"";position:absolute;top:6px;width:4px;height:4px;border-radius:2px;background:#f6b98c;display:none}
 #nav svg{width:22px;height:22px}
 
 /* sheet */
@@ -258,6 +261,19 @@ button:active:not(:disabled){transform:scale(.97)}
 .dsel.on{background:var(--acc-soft);border-color:var(--acc)} .dsel.on .t{color:var(--acc);font-weight:600}
 .dsel:disabled{opacity:1;background:var(--bg);border-color:var(--line2)} .dsel:disabled .v{color:var(--muted)}
 .dsel.on:disabled{background:var(--acc-soft);border-color:var(--acc-line)} .dsel.on:disabled .v{color:var(--ink)}
+/* display type */
+.rem .big,.pl .big,.tile .v,.entry .v,.sheet-title,.score,.trio .v,.quick button,.pickbtns button,.dsel .v,.slot .v,#cele .n,#cpupop .tot,#cpupop .ds span,.vrow .s,.half b{font-family:var(--disp)}
+.rem .big{font-size:78px;font-weight:800}
+.tile .v{font-weight:800}
+.sheet-title{font-weight:800;letter-spacing:-.01em}
+.card.hero{background:radial-gradient(circle at 104% 118%,transparent 0 40px,rgba(255,255,255,.07) 40px 48px,transparent 48px 80px,rgba(255,255,255,.06) 80px 86px,transparent 86px 118px,rgba(255,255,255,.05) 118px 122px,transparent 122px),var(--acc)}
+.tile.hero{background:radial-gradient(circle at 110% 125%,transparent 0 30px,rgba(255,255,255,.08) 30px 36px,transparent 36px 60px,rgba(255,255,255,.06) 60px 64px,transparent 64px),var(--acc)}
+#toast{background:var(--nav)}
+.card,.tile,.sess{border-color:var(--line)}
+.quick button{box-shadow:0 2px 0 var(--line)}
+.chip{font-weight:600}
+.chip.on{background:var(--nav);border-color:var(--nav)}
+.dmini{display:flex;height:12px;border-radius:6px;overflow:hidden;gap:2px;margin:8px 0 4px}
 </style>
 </head>
 <body>
@@ -277,7 +293,7 @@ button:active:not(:disabled){transform:scale(.97)}
 <input type="file" id="importFile" accept="application/json,.json" hidden>
 <script>
 "use strict";
-const APP_VERSION = "1.4";
+const APP_VERSION = "1.5";
 /* ===================== helpers ===================== */
 const $ = (s, el = document) => el.querySelector(s);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -521,7 +537,7 @@ const dartAt = (v, k, t, x) => v.dda ? !!v.dda[k] : atDouble(t, x);
 function doubleInfo(v, out) {
   if (v.d && v.d.length && out === "double") {
     let r = v.r, att = 0; const per = [];
-    for (let k = 0; k < v.d.length; k++) { const s = v.d[k]; const t = finishTarget(r); if (t && dartAt(v, k, t, s)) { att++; per.push({ t, hit: s === t, k }); } r -= VAL[s]; if (r <= 1 && r !== 0) break; if (r === 0) break; }
+    for (let k = 0; k < v.d.length; k++) { const s = v.d[k]; const t = finishTarget(r); if (t && dartAt(v, k, t, s)) { att++; per.push({ t, hit: s === t, k, x: s }); } r -= VAL[s]; if (r <= 1 && r !== 0) break; if (r === 0) break; }
     return { att, per };
   }
   return { att: v.dd || 0, per: null };
@@ -538,7 +554,7 @@ function startLeg() {
   const sid = ensureSession();
   const n = liveLegs().filter(l => l.sid === sid).length + 1;
   const leg = { id: uid(), sid, n, st: S.set.start, out: S.set.out, at: Date.now(), v: [], done: false };
-  persist([leg]); S.meta.active = leg.id; saveMeta(); S.input = ""; render();
+  persist([leg]); S.meta.active = leg.id; saveMeta(); S.input = ""; render(); say("Game on");
 }
 function endSession() { S.meta.active = null; S.meta.sid = null; saveMeta(); closeSheet(); render(); toast("Session ended"); }
 
@@ -751,7 +767,7 @@ function startMatchLeg() {
   m.legNo++; const other = m.opener === "cpu" ? "me" : "cpu", starter = m.legNo % 2 ? (m.opener || "me") : other;
   const n = liveLegs().filter(l => l.sid === sid).length + 1;
   const leg = { id: uid(), sid, n, st: m.st, out: m.out, at: Date.now(), v: [], done: false, m: { id: m.id, lvl: m.lvl, first: m.first, leg: m.legNo, starter, cpuV: [] } };
-  m.turn = starter; S.meta.active = leg.id; saveMeta(); persist([leg]); S.input = ""; closeSheet(); S.tab = "play"; render();
+  m.turn = starter; S.meta.active = leg.id; saveMeta(); persist([leg]); S.input = ""; closeSheet(); S.tab = "play"; render(); say(starter === "me" ? "Game on. You to throw first" : "Game on");
   if (starter === "cpu") setTimeout(cpuTurn, 700);
 }
 let cpuBusy = false;
@@ -783,6 +799,7 @@ function cpuTurn() {
     leg.m.cpuV.push(v); S.cpuShow = null; cpuBusy = false; S.animNew = true;
     if (v.f) { leg.end = true; leg.fin = Date.now(); leg.m.res = "lost"; m.cpu++; m.turn = null; S.meta.active = null; saveMeta(); persist([leg]); render(); openLegResult(leg); return; }
     m.turn = "me"; saveMeta(); persist([leg]); render();
+    const r = legRem(leg); if (r <= 170 && canFinish(r, leg.out)) say(`You require ${numWords(r)}`);
   };
   if (S.tab === "play") render();
   setTimeout(step, 450);
@@ -965,7 +982,8 @@ function feedback(leg, v) {
     else sfx("checkout");
     buzz([30, 40, 30]); say("Game shot"); return;
   }
-  const req = rem <= 170 && canFinish(rem, leg.out) ? `, you require ${numWords(rem)}` : "";
+  const vsCpu = !!(leg.m && M() && M().id === leg.m.id);   // against the CPU, "you require" waits until it's your turn again
+  const req = !vsCpu && rem <= 170 && canFinish(rem, leg.out) ? `, you require ${numWords(rem)}` : "";
   if (s === 180) { celebrate("Maximum", 180, "", 2400, 220); buzz([30, 50, 30, 50, 90]); say("One hundred and eighty!" + req); }
   else if (s >= 140) { celebrate("Ton-forty", s, "", 1600, 70); buzz([25, 40, 25]); say(numWords(s) + req); }
   else if (s >= 100) { celebrate("Ton", s, "", 1300, 0); buzz([20, 30, 20]); say(numWords(s) + req); }
@@ -1055,7 +1073,7 @@ function say(text, force) {
   try {
     const u = new SpeechSynthesisUtterance(text), vs = speechSynthesis.getVoices();
     u.lang = "en-GB"; u.voice = vs.find(x => /en[-_]GB/i.test(x.lang) && /male|daniel|george|arthur/i.test(x.name)) || vs.find(x => /en[-_]GB/i.test(x.lang)) || null;
-    u.rate = 1; speechSynthesis.cancel(); speechSynthesis.speak(u);
+    u.rate = 1.02; speechSynthesis.speak(u);   // queued, so calls follow each other instead of cutting off
   } catch (e) {}
 }
 
@@ -1179,7 +1197,7 @@ function compute(legs) {
     dd: 0, outs: 0, ddKnownLegs: 0, ranges: [[2, 40], [41, 60], [61, 100], [101, 170]].map(([a, b]) => ({ a, b, att: 0, hit: 0 })),
     legDarts: [], outsVals: [], dbl: new Map(), byVisit: [], sessions: new Map(), byLegNo: [], byHour: [0, 1, 2, 3].map(() => ({ p: 0, d: 0 })),
     picked: 0, heat: { all: new Map(), scoring: new Map(), finishing: new Map(), dbl: new Map() },
-    byDart: [0, 1, 2].map(() => ({ n: 0, p: 0, t: 0, t20: 0, b20: 0 })), after: { t: { n: 0, h: 0 }, o: { n: 0, h: 0 } }, dblPos: [0, 1, 2].map(() => ({ att: 0, hit: 0 })) };
+    byDart: [0, 1, 2].map(() => ({ n: 0, p: 0, t: 0, t20: 0, b20: 0 })), after: { t: { n: 0, h: 0 }, o: { n: 0, h: 0 } }, dblPos: [0, 1, 2].map(() => ({ att: 0, hit: 0 })), dblAim: new Map(), phase: { to: [], from: [], vis: [], sp: 0, sd: 0, fp: 0, fd: 0 }, seq: [], legSeq: [] };
   const inc = (m, k) => m.set(k, (m.get(k) || 0) + 1);
   for (const l of legs) {
     let lp = 0, ld = 0;
@@ -1196,7 +1214,7 @@ function compute(legs) {
         if (di.att) {
           st.dd += di.att; if (v.f) st.outs++;
           const rg = st.ranges.find(x => v.r >= x.a && v.r <= x.b); if (rg) { rg.att += di.att; if (v.f) rg.hit++; }
-          (di.per || []).forEach(x => { const e = st.dbl.get(x.t) || { att: 0, hit: 0 }; e.att++; if (x.hit) e.hit++; st.dbl.set(x.t, e); const dp = st.dblPos[x.k]; if (dp) { dp.att++; if (x.hit) dp.hit++; } });
+          (di.per || []).forEach(x => { const e = st.dbl.get(x.t) || { att: 0, hit: 0 }; e.att++; if (x.hit) e.hit++; st.dbl.set(x.t, e); const dp = st.dblPos[x.k]; if (dp) { dp.att++; if (x.hit) dp.hit++; } if (x.x) { const m = st.dblAim.get(x.t) || new Map(); m.set(x.x, (m.get(x.x) || 0) + 1); st.dblAim.set(x.t, m); } });
         }
       }
       if (v.d && v.d.length) {
@@ -1213,8 +1231,11 @@ function compute(legs) {
         });
       }
     });
-    const h = new Date(l.at).getHours(), hb = h < 12 ? 0 : h < 17 ? 1 : h < 21 ? 2 : 3;
-    st.byHour[hb].p += lp; st.byHour[hb].d += ld;
+    { // phases of the leg: getting down to a finish, then finishing
+      let r = l.st, dTo = 0, dFrom = 0, vis = 0;
+      l.v.forEach(v => { const d = dartsOf(v), sc = scored(v); if (r > 170) { dTo += d; st.phase.sp += sc; st.phase.sd += d; } else { dFrom += d; vis++; st.phase.fp += sc; st.phase.fd += d; } r -= sc; st.seq.push(v); });
+      if (l.done) { st.phase.to.push(dTo); st.phase.from.push(dFrom); st.phase.vis.push(vis); st.legSeq.push(ld); }
+    }
     (st.byLegNo[Math.min((l.n || 1) - 1, 7)] ||= { p: 0, d: 0 }); const bl = st.byLegNo[Math.min((l.n || 1) - 1, 7)]; bl.p += lp; bl.d += ld;
     if (l.done) { st.done++; st.legDarts.push(ld); st.outsVals.push(l.v[l.v.length - 1].s); }
     const se = st.sessions.get(l.sid) || { sid: l.sid, at: l.at, p: 0, d: 0, legs: 0, ton: 0, best: null };
@@ -1272,7 +1293,7 @@ function boardHeat(counts, ring = "all", sel = null) {
   // singles are split across the two single beds, so divide by 2 to compare like with like
   const share = s => (counts.get(s) || 0) / tot;
   const mx = Math.max(...ALL.filter(s => s !== "M" && inRing(s, ring)).map(s => ringOf(s) === "S" ? share(s) / 2 : share(s)), 1e-9);
-  const fill = (x, v) => inRing(x, ring) ? col(v) : "#f1eee8";
+  const fill = (x, v) => inRing(x, ring) ? col(v) : "#e6ece4";
   const stops = [[251, 240, 231], [242, 172, 120], [218, 100, 44], [140, 52, 16]];
   const col = v => { const t = Math.min(1, Math.sqrt(v / mx)) * 3, i = Math.min(2, Math.floor(t)), f = t - i; return "rgb(" + stops[i].map((s, k) => Math.round(s + (stops[i + 1][k] - s) * f)).join(",") + ")"; };
   const rings = [[16, 80, "S", 2], [80, 96, "T", 1], [96, 132, "S", 2], [132, 146, "D", 1]];
@@ -1369,6 +1390,7 @@ function statsFinishing(st) {
     <div class="card"><p class="h2">How darts at a double are counted</p><p class="sub">You tell the app. Any visit that gets down to 50 or less asks how many darts were at a double, or which ones if you picked the darts. It only skips asking when the answer is obvious: three misses, only going just inside the double (like 20 or 30 from 40), or a checkout where the other darts did the same.</p></div>
     <div class="card"><p class="h2">Doubles</p><p class="sub" style="margin-bottom:6px">From visits where you picked the darts</p>
       ${dbl.length ? `<table class="tbl"><tr><th>Double</th><th>Darts</th><th>Hit</th><th>Rate</th></tr>${dbl.map(([t, e]) => `<tr><td><b>${t === "Others" ? "Others" : segLabel(t)}</b></td><td class="muted">${e.att}</td><td class="muted">${e.hit}</td><td><b>${pct(e.hit, e.att)}</b></td></tr>`).join("")}</table>` : `<p class="empty" style="padding:12px">No darts at a double picked yet.</p>`}</div>
+    ${dblAimCard(st)}
     ${st.dblPos[0].att ? `<div class="card"><p class="h2">Doubles by dart in the visit</p><p class="sub" style="margin-bottom:6px">Hit rate when the 1st, 2nd or 3rd dart of a visit was at a double</p>
       ${byDartTable([["Hit rate", c => pct(c.hit, c.att)], ["Hits", c => fmtN(c.hit)], ["Darts", c => fmtN(c.att)]], st.dblPos)}</div>` : ""}
     <div class="card"><p class="h2">Darts per finished leg</p><div style="margin-top:8px">${finished ? barChart(ldBins, { label: "Darts per leg histogram" }) : `<p class="empty" style="padding:12px">Finish a leg to see this.</p>`}</div></div>
@@ -1414,6 +1436,47 @@ function statsAccuracy(st) {
       ${byDartTable([["Points per dart", c => f2(c.p / c.n)], ["Treble 20", c => pct(c.t20, c.n)], ["Any treble", c => pct(c.t, c.n)], ["20 bed (S, T or D20)", c => pct(c.b20, c.n)], ["Darts", c => fmtN(c.n)]], D)}
       ${A.t.n >= 5 && A.o.n >= 5 ? `<p class="sub" style="margin-top:8px">After a T20, your next dart hits T20 ${pct(A.t.h, A.t.n)} of the time (${A.t.h} of ${A.t.n}), against ${pct(A.o.h, A.o.n)} after any other dart.</p>` : ""}</div>` : ""}`;
 }
+const mean = a => a.length ? sum(a) / a.length : null;
+function phaseCard(st) {
+  const P = st.phase; if (!P.to.length) return "";
+  const to = mean(P.to), fr = mean(P.from), tot = to + fr;
+  return `<div class="card"><p class="h2">How your legs go</p><p class="sub">Finished legs, split at the point you get to 170 or less</p>
+    <div class="dmini"><div style="width:${to / tot * 100}%;background:var(--acc)"></div><div style="width:${fr / tot * 100}%;background:var(--warm)"></div></div>
+    <div class="trio" style="margin-top:8px"><div><span class="l"><span class="dot" style="display:inline-block;background:var(--acc);margin-right:5px"></span>To a finish</span><span class="v">${f1(to)} darts</span></div>
+      <div><span class="l"><span class="dot" style="display:inline-block;background:var(--warm);margin-right:5px"></span>To check out</span><span class="v">${f1(fr)} darts</span></div>
+      <div><span class="l">Visits on a finish</span><span class="v">${f1(mean(P.vis))}</span></div></div>
+    <div style="margin-top:8px">${kv("Average getting to a finish", P.sd ? f1(P.sp / P.sd * 3) : "–")}${kv("Legs finished on the first visit at a finish", pct(P.vis.filter(x => x === 1).length, P.vis.length))}</div></div>`;
+}
+function longestRun(arr, ok) { let best = 0, cur = 0; arr.forEach(x => { if (ok(x)) { cur++; best = Math.max(best, cur); } else cur = 0; }); return best; }
+function streakCard(st) {
+  if (!st.seq.length) return "";
+  return `<div class="card"><p class="h2" style="margin-bottom:4px">Streaks</p>
+    ${kv("Longest run of 60+ visits", longestRun(st.seq, v => !v.b && v.s >= 60))}
+    ${kv("Most 100+ visits in a row", longestRun(st.seq, v => !v.b && v.s >= 100))}
+    ${kv("Longest run without a bust", longestRun(st.seq, v => !v.b))}
+    ${st.legSeq.length ? kv("Legs in a row under 30 darts", longestRun(st.legSeq, d => d < 30)) : ""}</div>`;
+}
+function dblAimCard(st) {
+  const list = [...st.dblAim.entries()].map(([t, m]) => [t, m, sum([...m.values()])]).sort((a, b) => b[2] - a[2]);
+  if (!list.length) return "";
+  const t = S.stats.dbl && list.find(x => x[0] === S.stats.dbl) ? S.stats.dbl : list[0][0];
+  const [, m, tot] = list.find(x => x[0] === t), g = x => m.get(x) || 0;
+  let rows;
+  if (t === "DB") rows = [["Bull", g("DB"), "hit"], ["25", g("SB"), "in"], ["Off the bull", tot - g("DB") - g("SB") - g("M"), "wide"], ["Off the board", g("M"), "out"]];
+  else {
+    const n = +t.slice(1), [l, r] = nbrs(n), bed = x => g("S" + x) + g("T" + x) + g("D" + x);
+    const hit = g(t), ins = g("S" + n) + g("T" + n), wl = bed(l), wr = bed(r), out = g("M");
+    rows = [["Hit " + t, hit, "hit"], ["Just inside", ins, "in"], ["Off the board", out, "out"], ["Wide into the " + l, wl, "wide"], ["Wide into the " + r, wr, "wide"], ["Elsewhere", tot - hit - ins - out - wl - wr, "else"]];
+  }
+  const col = { hit: "var(--acc)", in: "#5f9478", out: "var(--warm)", wide: "#f2ac78", else: "#c3ccc4" };
+  const miss = tot - rows[0][1], mx = Math.max(...rows.map(r => r[1]), 1);
+  const ins = rows[1][1], out = rows[2][1], wide = rows.filter(r => r[2] === "wide").reduce((a, r) => a + r[1], 0);
+  return `<div class="card stack" style="gap:8px"><p class="h2">Aiming at doubles</p><p class="sub" style="margin:0">Where your darts at each double landed</p>
+    <div class="chips">${list.slice(0, 10).map(([x, , k]) => `<button class="chip${x === t ? " on" : ""}" data-dbl="${x}">${segLabel(x)} <span style="opacity:.7">${k}</span></button>`).join("")}</div>
+    <div class="dmini">${rows.filter(r => r[1]).map(r => `<div style="width:${r[1] / tot * 100}%;background:${col[r[2]]}"></div>`).join("")}</div>
+    <div>${rows.map(([lab, k, c]) => `<div class="brow"><span class="dot" style="background:${col[c]}"></span><span class="grow">${lab}</span><span class="n">${fmtN(k)}</span><span class="p">${pct(k, tot)}</span></div>`).join("")}</div>
+    ${miss >= 4 ? `<p class="sub" style="margin:0">Of your misses at ${segLabel(t)}, ${pct(ins, miss)} went inside, ${pct(out, miss)} off the board and ${pct(wide, miss)} wide.</p>` : ""}</div>`;
+}
 function statsProgress(st, p) {
   const all = statsFor("all");
   const sess = st.sessList.filter(s => s.d >= 9);
@@ -1424,7 +1487,6 @@ function statsProgress(st, p) {
   const bestLegAvg = liveLegs().filter(l => l.done).map(l => ({ l, a: avgOf([l]) })).sort((a, b) => b.a - a.a)[0];
   const mostTon = all.sessList.slice().sort((a, b) => b.ton - a.ton)[0];
   const byLeg = st.byLegNo.map((x, i) => x ? { l: i === 7 ? "8+" : "L" + (i + 1), v: x.d ? x.p / x.d * 3 : 0 } : null).filter(Boolean); byLeg.forEach(b => b.t = f1(b.v));
-  const byHour = ["Morning", "Afternoon", "Evening", "Late"].map((l, i) => ({ l, v: st.byHour[i].d ? st.byHour[i].p / st.byHour[i].d * 3 : 0 })).filter(b => b.v); byHour.forEach(b => b.t = f1(b.v));
   return `<div class="card"><p class="h2">Rolling average</p><p class="sub">Average over your last 10 legs, leg by leg</p><div style="margin-top:8px">${lineChart(roll, { label: "Rolling 10-leg average", need: "Shows after 11 legs in this period.", xl: legsSorted.length ? [fmtDate(legsSorted[W - 1]?.at || legsSorted[0].at), fmtDate(legsSorted[legsSorted.length - 1].at)] : null })}</div></div>
     <div class="card"><p class="h2">Average by session</p><div style="margin-top:8px">${lineChart(sess.map(s => s.p / s.d * 3), { mean: st.avg, label: "Average by session", need: "Shows once you have two sessions.", xl: sess.length > 1 ? [fmtDate(sess[0].at), fmtDate(sess[sess.length - 1].at)] : null })}</div></div>
     <div class="card"><p class="h2" style="margin-bottom:4px">Personal bests (all time)</p>
@@ -1435,7 +1497,8 @@ function statsProgress(st, p) {
       ${kv("180s", all.s180)}</div>
     ${byLeg.length > 1 ? `<div class="card"><p class="h2">Average by leg of the session</p><p class="sub">Does your game hold up as a session goes on?</p><div style="margin-top:8px">${barChart(byLeg, { label: "Average by leg number" })}</div></div>` : ""}
     ${cpuCard()}
-    ${byHour.length > 1 ? `<div class="card"><p class="h2">Average by time of day</p><div style="margin-top:8px">${barChart(byHour, { label: "Average by time of day" })}</div></div>` : ""}`;
+    ${phaseCard(st)}
+    ${streakCard(st)}`;
 }
 
 function cpuCard() {
@@ -1601,6 +1664,7 @@ document.addEventListener("click", e => {
   if (d.stab) { S.stats.tab = d.stab; render(); return; }
   if (d.heat) { S.stats.heat = d.heat; render(); return; }
   if (d.ring) { S.stats.ring = d.ring; render(); return; }
+  if (d.dbl) { S.stats.dbl = d.dbl; render(); return; }
   if (d.bull != null) { bullThrow(+d.bull); return; }
   if (d.hsess) { S.hist.open = S.hist.open === d.hsess ? null : d.hsess; render(); return; }
   if (d.hleg) { openLeg(d.hleg); return; }
