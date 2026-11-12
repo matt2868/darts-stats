@@ -379,6 +379,8 @@ button:active:not(:disabled){transform:scale(.97)}
 .ac.more{color:var(--muted)}
 .darts span{display:inline-flex;flex-direction:column;align-items:center;line-height:1.1}
 .darts span small,.slot small,.pickbtns small{font-size:10.5px;font-weight:600;color:var(--warm-dark);margin-top:1px}
+.slot small.au{color:var(--muted);font-weight:500}
+.atd{display:inline-block;border:1.5px solid var(--acc);border-radius:5px;padding:0 3px;line-height:1.25;color:var(--ink)}
 .tbl.rep td{font-family:var(--disp);font-size:15px;font-weight:600}
 .tbl.rep td:first-child{font-family:"DM Sans",sans-serif;font-weight:400;font-size:14px}
 .tbl.rep td.win{color:var(--acc);font-weight:800}
@@ -825,8 +827,13 @@ function viewPlay() {
   </div></div>`;
 }
 /** Visits, newest at the top. Collapsed to the last three; against the CPU, both players side by side. */
+function dartsLine(v, out) {   // darts at a double get a box round them
+  if (!v.d) return "";
+  const at = new Set((doubleInfo(v, out).per || []).map(p => p.k));
+  return v.d.map((x, k) => at.has(k) ? `<span class="atd">${segLabel(x)}</span>` : segLabel(x)).join(" · ");
+}
 function visitsCard(leg, m) {
-  const all = S.showAll, dl = v => v.b ? "Bust" : v.d ? v.d.map(segLabel).join(" · ") : "";
+  const all = S.showAll, dl = v => v.b && !v.d ? "Bust" : dartsLine(v, leg.out);
   const more = n => n > 3 ? `<button class="more" data-act="toggle-visits">${all ? "Show fewer" : `Show all ${n}`}</button>` : "";
   if (!m) {
     if (!leg.v.length) return "";
@@ -843,7 +850,7 @@ function visitsCard(leg, m) {
     rows.push({ i, a, c, ml, cl });
   }
   rows.reverse();
-  const half = (v, left, cls) => v ? `<div class="half ${cls}"><b class="${v.b ? "bu" : ""}">${v.b ? "Bust" : v.s}</b><span class="l">${left}</span><span class="d">${v.b ? (v.d ? v.d.map(segLabel).join(" · ") : "") : dl(v)}</span></div>` : `<div class="half ${cls}"></div>`;
+  const half = (v, left, cls) => v ? `<div class="half ${cls}"><b class="${v.b ? "bu" : ""}">${v.b ? "Bust" : v.s}</b><span class="l">${left}</span><span class="d">${v.b ? dartsLine(v, leg.out) : dl(v)}</span></div>` : `<div class="half ${cls}"></div>`;
   return `<div class="card visits"><div class="rhead"><span></span><span>You</span><span>CPU ${m.lvl}</span></div>
     ${(all ? rows : rows.slice(0, 3)).map((r, k) => `<div class="rrow${k === 0 && S.animNew ? " new" : ""}"><span class="n">${r.i + 1}</span>${half(r.a, r.ml, "")}${half(r.c, r.cl, "cpu")}</div>`).join("")}${more(rows.length)}</div>`;
 }
@@ -1058,7 +1065,10 @@ function cpuTurn() {
   const m = M(), leg = activeLeg();
   if (!m || !leg || !leg.m || leg.m.id !== m.id || m.turn !== "cpu" || cpuBusy) return;
   cpuBusy = true;
-  const v = cpuVisit(cpuRem(leg), m.sig, leg.out); v.t = Date.now();
+  // after an undo the CPU throws exactly what it threw before, so redoing a visit can't reroll its darts
+  const cr = cpuRem(leg), rp = leg.m.replay && leg.m.replay[0] && leg.m.replay[0].r === cr ? leg.m.replay.shift() : null;
+  if (leg.m.replay && (!leg.m.replay.length || !rp)) delete leg.m.replay;
+  const v = rp ? { ...rp } : cpuVisit(cr, m.sig, leg.out); v.t = Date.now();
   const pop = S.set.cpuPop !== "off";
   S.cpuShow = { d: [], rem: v.r };
   let i = 0, fast = false;
@@ -1207,7 +1217,7 @@ function onKey(k) {
   sfx("click");
   if (k === "back") {
     if (S.input) S.input = S.input.slice(0, -1);
-    else if (leg.v.length) { const v = leg.v.pop(); if (leg.m) { leg.m.cpuV = leg.m.cpuV.filter(c => c.t < v.t); if (M()) { M().turn = "me"; saveMeta(); } } persist([leg]); toast(`Removed visit of ${v.s}`); render(); return; }
+    else if (leg.v.length) { const v = leg.v.pop(); if (leg.m) { const gone = leg.m.cpuV.filter(c => c.t >= v.t); leg.m.replay = gone.concat(leg.m.replay || []); leg.m.cpuV = leg.m.cpuV.filter(c => c.t < v.t); if (M()) { M().turn = "me"; saveMeta(); } } persist([leg]); toast(`Removed visit of ${v.s}`); render(); return; }
     else { toast("Nothing to undo"); return; }
   } else if (k === "next") { submitScore(); return; }
   else { if (S.input.length >= 3 || (S.input === "0")) S.input = S.input === "0" ? k : S.input; else S.input += k; if (+S.input > 180) { S.input = S.input.slice(0, -1); toast("A visit can't score more than 180"); } }
@@ -1417,7 +1427,7 @@ function tapOrder(i) {
   const rest = P.combo.map((_, j) => j).filter(j => !P.used.includes(j));
   if (rest.length && new Set(rest.map(j => P.combo[j].x)).size === 1) rest.forEach(take);
   drawPicker();
-  if (P.order.length === P.combo.length) { P.auto = true; setTimeout(() => { if (S.sheet === P) { P.auto = false; finishOrder(); } }, 280); }
+  if (P.order.length === P.combo.length) { P.auto = true; setTimeout(() => { if (S.sheet === P) { P.auto = false; finishOrder(); } }, 500); }
 }
 function setAims(v, aims) { if (aims && aims.some(Boolean)) v.aim = aims.map(a => a || null); else delete v.aim; }
 function finishOrder() {
@@ -1433,6 +1443,13 @@ function aimChips(P) {
   return `<div class="aimrow"><span class="small muted">Aim</span><button class="ac${!P.aim ? " on" : ""}" data-paim="">Auto</button>${vis.map(a => `<button class="ac${P.aim === a ? " on" : ""}" data-paim="${a}">${aimLabel(a)}</button>`).join("")}<button class="ac more" data-act="aim-more">${P.aimMore ? "Less" : "More"}</button></div>
     ${P.aimMore ? `<div class="aimgrid">${all.map(a => `<button class="ac${P.aim === a ? " on" : ""}" data-paim="${a}">${aimLabel(a)}</button>`).join("")}</div>` : ""}`;
 }
+/** What it reads each dart so far as aimed at (your pick if you made one), shown under the darts as you tap them. */
+function liveAims(r, darts, aims, out) {
+  if (!darts.length) return [];
+  const v = { r, d: darts }; if (aims && aims.some(Boolean)) v.aim = darts.map((_, k) => aims[k] || null);
+  return inferAims(v, out).map(o => o.dbl || o.seg || null);
+}
+const captL = (a, man) => a ? `<small${man ? "" : ` class="au"`}>at ${a === "DB" ? "bull" : a === "SB" ? "25" : a}</small>` : "";
 const capt = a => a ? `<small>at ${a === "DB" ? "bull" : a === "SB" ? "25" : /^[SDT]/.test(a) ? a.slice(1) : aimLabel(a)}</small>` : "";
 const dchip = it => `<span>${segLabel(it.x)}${capt(it.a)}</span>`;
 function drawPicker() {
@@ -1441,12 +1458,12 @@ function drawPicker() {
   let title = `${v.s} — which darts?`, body;
   if (P.step === "build") {
     if (P.bust) title = "Bust — which darts?";
-    const B = P.b, tot = sum(B.darts.map(x => VAL[x])), need = v.s - tot;
+    const B = P.b, tot = sum(B.darts.map(x => VAL[x])), need = v.s - tot, la = liveAims(v.r, B.darts, B.aims, leg.out);
     const nums = Array.from({ length: 20 }, (_, i) => i + 1).map(n => `<button data-bnum="${n}">${n}</button>`).join("");
     const note = P.bust ? (B.darts.length ? `Total ${tot}. The last dart should be the one that bust.` : "Tap the darts in the order you threw them, ending with the one that bust.")
       : B.darts.length ? `Total ${tot}${need > 0 ? ` · ${need} still to place` : need < 0 ? ` · ${-need} too many` : " ✓"}${v.f && leg.out === "double" ? ". The last dart must be a double." : ""}` : `Tap the darts in the order you threw them.${v.f && leg.out === "double" ? " The last dart must be a double." : ""}`;
     body = `
-    <div class="slots">${[0, 1, 2].map(i => `<button class="slot${B.darts[i] ? "" : " empty"}${i === B.darts.length ? " next" : ""}" data-bslot="${i}"><span class="l">Dart ${i + 1}</span><span class="v">${B.darts[i] ? segLabel(B.darts[i]) : "–"}</span>${B.aims[i] ? capt(B.aims[i]) : ""}</button>`).join("")}</div>
+    <div class="slots">${[0, 1, 2].map(i => `<button class="slot${B.darts[i] ? "" : " empty"}${i === B.darts.length ? " next" : ""}" data-bslot="${i}"><span class="l">Dart ${i + 1}</span><span class="v">${B.darts[i] ? segLabel(B.darts[i]) : "–"}</span>${B.darts[i] ? captL(la[i], !!B.aims[i]) : ""}</button>`).join("")}</div>
     <div class="seg">${["S", "D", "T"].map(m => `<button class="${B.mult === m ? "on" : ""}" data-bmult="${m}">${m === "S" ? "Single" : m === "D" ? "Double" : "Treble"}</button>`).join("")}</div>
     <div class="numgrid">${nums}<button data-bseg="SB">25</button><button data-bseg="DB">Bull</button><button data-bseg="M" style="grid-column:span 3">Miss</button></div>
     ${P.mis ? (() => { const e = P.mis, what = e.b ? `${e.s} and bust` : e.f ? `a ${e.s} checkout` : String(e.s);
@@ -1456,9 +1473,9 @@ function drawPicker() {
     <div class="row"><button class="btn ghost grow" data-act="b-clear">Clear</button>${P.list.length ? `<button class="btn ghost grow" data-act="b-back">Suggestions</button>` : ""}<button class="btn ghost grow" data-act="p-skip">Skip darts</button></div>`;
   } else if (P.step === "order") {
     title = "Tap them in the order you threw";
-    const n = P.combo.length;
+    const n = P.combo.length, la = liveAims(v.r, P.order.map(o => o.x), P.order.map(o => o.a), leg.out);
     body = `
-    <div class="slots">${Array.from({ length: n }, (_, i) => `<div class="slot${P.order[i] ? "" : " empty"}${i === P.order.length ? " next" : ""}"><span class="l">Dart ${i + 1}</span><span class="v">${P.order[i] ? segLabel(P.order[i].x) : "–"}</span>${P.order[i] && P.order[i].a ? capt(P.order[i].a) : ""}</div>`).join("")}</div>
+    <div class="slots">${Array.from({ length: n }, (_, i) => `<div class="slot${P.order[i] ? "" : " empty"}${i === P.order.length ? " next" : ""}"><span class="l">Dart ${i + 1}</span><span class="v">${P.order[i] ? segLabel(P.order[i].x) : "–"}</span>${P.order[i] ? captL(la[i], !!P.order[i].a) : ""}</div>`).join("")}</div>
     <div class="pickbtns">${P.combo.map((it, i) => { const u = P.used.indexOf(i); return `<button data-pord="${i}" aria-label="${segLabel(it.x)}"${u >= 0 ? " disabled" : ""}><span>${segLabel(it.x)}</span>${u >= 0 ? `<small>dart ${u + 1}</small>` : it.a ? capt(it.a) : ""}</button>`; }).join("")}</div>
     <div class="row"><button class="btn ghost grow" data-act="p-back">Back</button><button class="btn ghost grow" data-act="p-reset"${P.order.length ? "" : " disabled"}>Start again</button></div>`;
   } else {
@@ -1488,7 +1505,7 @@ function buildCheck() {
   const match = P.bust ? !!ev.b : (ev.s === v.s && !!ev.f === !!v.f && !ev.b);
   if (!match) { P.mis = ev; drawPicker(); return; }
   P.auto = true; drawPicker();   // complete: save on its own after a beat
-  setTimeout(() => { if (S.sheet !== P) return; P.auto = false; v.d = ev.d; setAims(v, P.b.aims.slice(0, ev.d.length)); v.s = ev.s; if (ev.b) v.b = true; askOrSave(leg, v, true); }, 300);
+  setTimeout(() => { if (S.sheet !== P) return; P.auto = false; v.d = ev.d; setAims(v, P.b.aims.slice(0, ev.d.length)); v.s = ev.s; if (ev.b) v.b = true; askOrSave(leg, v, true); }, 500);
 }
 function buildOk() {
   const P = S.sheet, v = P.v, leg = S.legs.get(P.leg), d = P.b.darts, dbl = leg.out === "double";
@@ -1583,7 +1600,7 @@ function inferAims(v, out) {
     if (ma) { o.man = true; o.seg = aimSeg(ma, r, x, 3 - k, out); o.n = segNum(o.seg); if (t && o.seg !== t) o.dbl = null; }
     else if (t) { o.n = t === "DB" ? 25 : +t.slice(1); o.seg = t; }
     else if (r > 170) { const n = segNum(x); if (G20.has(n)) o.n = 20; else if (G19.has(n)) o.n = 19; }
-    else { const a = x === "M" ? (aimMix(r, 3 - k, out)[0] || [])[0] : routeAim(x, r, 3 - k, out); if (a) { o.seg = a; o.n = segNum(a); } }
+    else { const a = x === "M" ? (aimMix(r, 3 - k, out)[0] || [])[0] : routeAim(x, r, 3 - k, out) || (x !== "M" ? x : null); if (a) { o.seg = a; o.n = segNum(a); } }   // nothing on your routes explains it: take it as hitting what you aimed at
     r -= VAL[x]; return o;
   });
   for (let k = 1; k < res.length; k++) if (res[k].n == null && res[k].r > 170 && !res[k].man) res[k].n = res[k - 1].n;
@@ -2234,7 +2251,7 @@ function openLeg(id) {
   const l = S.legs.get(id); if (!l) return;
   S.sheet = { kind: "leg", leg: id };
   let left = l.st;
-  const rows = l.v.map((v, i) => { left -= scored(v); return `<div class="vrow${v.b ? " bust" : ""}"><span class="n">${i + 1}</span><span class="s">${v.s}</span><span class="d">${v.b ? "Bust" : v.d ? v.d.map(segLabel).join(" · ") : ""}</span><span class="l">${left}</span></div>`; }).join("");
+  const rows = l.v.map((v, i) => { left -= scored(v); return `<div class="vrow${v.b ? " bust" : ""}"><span class="n">${i + 1}</span><span class="s">${v.s}</span><span class="d">${v.b && !v.d ? "Bust" : dartsLine(v, l.out)}</span><span class="l">${left}</span></div>`; }).join("");
   openSheet(`<div class="stack" style="gap:14px"><div><span class="s13 muted">${fmtDate(l.at)} · ${fmtTime(l.at)}</span><p class="sheet-title">Leg ${l.n} · ${l.st}${l.m ? ` · vs CPU ${l.m.lvl}` : ""}</p></div>
     <div class="trio card"><div><span class="l">Average</span><span class="v">${l.v.length ? f1(avgOf([l])) : "–"}</span></div><div><span class="l">Darts</span><span class="v">${legDarts(l)}</span></div><div><span class="l">Result</span><span class="v">${l.done ? "Won" : l.m && l.m.res === "lost" ? "Lost" : "Unfinished"}</span></div></div>
     ${rows ? `<div class="card" style="padding:2px 14px">${rows}</div>` : ""}
