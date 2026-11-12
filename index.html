@@ -341,7 +341,7 @@ button:active:not(:disabled){transform:scale(.97)}
   #app.play .keypad{min-height:0}
 }
 .ngrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(46px,1fr));gap:5px}
-.nc{display:flex;align-items:center;justify-content:center;aspect-ratio:1;border-radius:9px;font-family:var(--disp);font-weight:700;font-size:14px;border:1.5px solid var(--line);background:#fff;color:var(--muted);padding:0}
+.nc{display:flex;align-items:center;justify-content:center;aspect-ratio:1;border-radius:9px;font-family:var(--disp);font-weight:700;font-size:14px;border:1.5px solid var(--line);background:#fff;color:var(--muted);padding:0;text-shadow:0 1px 1px rgba(0,0,0,.18)}
 .nc.fin{background:#fff;border-color:var(--acc-line);color:var(--ink)}
 .nc.fin.seen{border-style:dashed;border-color:var(--acc-mid)}
 .nc.sc{background:#f4efe3;border-color:#e8dfc8;color:#a89a76}
@@ -397,7 +397,7 @@ button:active:not(:disabled){transform:scale(.97)}
 .nc.sc{background:#f7f3ea;border-color:#ece4cf;color:#b3a57f}
 .nc.fin{background:#fff;border-color:var(--acc-line);color:var(--ink)}
 .nc.got{box-shadow:inset 0 0 0 2.5px #d4a531,0 0 0 1px #f1dc9c}
-.nc.shot{color:#c22f22}.nc.fin.got{color:#9a6b06}
+.nc.shot{color:#c22f22}.nc.fin.got{color:#f2b425;text-shadow:0 0 2px rgba(60,38,0,.7),0 0 1px rgba(60,38,0,.9)}
 .nc.start{background:#fff;border:2px solid var(--nav);color:var(--nav)}
 .legend .ramp{display:inline-block;width:46px;height:12px;border-radius:4px}
 .legend .ramp.fin{background:linear-gradient(90deg,rgb(214,233,221),rgb(20,78,52))}
@@ -953,7 +953,7 @@ function viewNumbers() {
     if ((f === "fin" && !fin) || (f === "got" && !outs) || (f === "todo" && (!fin || outs))) return "";
     let st = "", cls = (fin ? "fin" : "sc") + (shot ? " shot" : "");
     if (STARTS.has(n)) cls += " start";
-    else if (k) { const mx = n > 170 ? maxS : maxF, t = .12 + .88 * Math.log(1 + k) / Math.log(1 + mx); st = `background:${fin ? mix([214, 233, 221], [20, 78, 52], t) : mix([239, 229, 204], [120, 88, 30], t)};color:${outs ? (t > .52 ? "#f5d36b" : "#9a6b06") : shot ? (t > .52 ? "#ffb4a6" : "#c22f22") : t > .52 ? "#fff" : fin ? "#14211a" : "#5b4a22"};border-color:transparent`; }
+    else if (k) { const mx = n > 170 ? maxS : maxF, t = .12 + .88 * Math.log(1 + k) / Math.log(1 + mx); st = `background:${fin ? mix([214, 233, 221], (outs || shot) ? [52, 104, 78] : [20, 78, 52], t) : mix([239, 229, 204], [120, 88, 30], t)};color:${outs ? "#f2b425" : shot ? "#d0342a" : t > .52 ? "#fff" : fin ? "#14211a" : "#5b4a22"};border-color:transparent`; }
     return `<button class="nc ${cls}${outs ? " got" : ""}" style="${st}" data-num="${n}" aria-label="${n}, on it ${k} time${k === 1 ? "" : "s"}${shot ? `, ${e.att} at a double` : ""}${outs ? `, checked out ${outs}` : ""}">${n}</button>`;
   };
   const sec = (a, b, l) => { let h = ""; for (let n = a; n >= b; n--) h += cell(n); return h ? `<div class="card"><p class="h2" style="margin-bottom:10px">${l} <span class="small muted">${a}–${b}</span></p><div class="ngrid">${h}</div></div>` : ""; };
