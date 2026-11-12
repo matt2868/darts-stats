@@ -917,7 +917,7 @@ function viewNumbers() {
   const fins = []; for (let n = 2; n <= 170; n++) if (finishable(n)) fins.push(n);
   const got = fins.filter(n => (idx.get(n) || {}).outs).length;
   // shade by how often you've stood on a number; starting scores sit outside the scale or they'd wash everything else out
-  const STARTS = new Set([301, 501, 701]), ent = [...idx.entries()].filter(([n]) => !STARTS.has(n) && n <= 501);
+  const STARTS = new Set([501, 701]), ent = [...idx.entries()].filter(([n]) => !STARTS.has(n) && n <= 501);
   const maxS = Math.max(1, ...ent.filter(([n]) => n > 170).map(([, e]) => e.n)), maxF = Math.max(1, ...ent.filter(([n]) => n <= 170).map(([, e]) => e.n));   // scoring and finishes each get their own scale
   const mix = (a, b, t) => `rgb(${a.map((x, i) => Math.round(x + (b[i] - x) * t)).join(",")})`;
   const cell = n => {
@@ -1912,19 +1912,22 @@ function statsAccuracy(st) {
   if (!st.picked) return `<div class="card empty">Accuracy builds from the darts you pick after each visit. Pick the darts on a few visits and this fills in.</div>`;
   const F = [["scoring", "Scoring"], ["tgt", "By target"], ["dbl", "At a double"], ["finishing", "170 and below"], ["all", "All"]];
   const f = F.some(x => x[0] === S.stats.heat) ? S.stats.heat : "scoring", dT = f === "dbl" && S.stats.dblT && st.heatDblT.has(S.stats.dblT) ? S.stats.dblT : null;
-  const tgts = [...st.heatT.entries()].map(([t, hm]) => [t, sum([...hm.values()])]).sort((a, b) => b[1] - a[1]);
-  const tT = f === "tgt" ? (S.stats.tgt && st.heatT.has(S.stats.tgt) ? S.stats.tgt : (tgts[0] || [])[0]) : null;
-  const m = dT ? st.heatDblT.get(dT) : tT ? st.heatT.get(tT) : (st.heat[f] || new Map()), tot = sum([...m.values()]);
+  const tgts = [...st.heatT.entries()].filter(([t]) => !/^D\d/.test(t)).map(([t, hm]) => [t, sum([...hm.values()])]).sort((a, b) => b[1] - a[1]);
+  const sg = f === "scoring" && [20, 19, 18].includes(S.stats.sgrp) && st.heat["at" + S.stats.sgrp].size ? S.stats.sgrp : null;
+  const tT = f === "tgt" ? (S.stats.tgt && tgts.some(x => x[0] === S.stats.tgt) ? S.stats.tgt : (tgts[0] || [])[0]) : null;
+  const m = dT ? st.heatDblT.get(dT) : tT ? st.heatT.get(tT) : sg ? st.heat["at" + sg] : (st.heat[f] || new Map()), tot = sum([...m.values()]);
   const ring = S.stats.ring || "all", seg = S.stats.seg || null;
   const dbls = [...st.heatDblT.entries()].map(([t, hm]) => [t, sum([...hm.values()])]).sort((a, b) => b[1] - a[1]);
   const top = [...m.entries()].filter(([x]) => inRing(x, ring)).sort((a, b) => b[1] - a[1]).slice(0, 8);
   const desc = { scoring: "Darts thrown with more than 170 left", at20: "Scoring darts at the 20, worked out from where each landed", at19: "Scoring darts at the 19, worked out from where each landed", at18: "Third darts at the 18, after going 20 then 19 in the same visit", finishing: "Darts thrown on 170 or less", dbl: "Darts you marked as at a double; misses sit outside the double you were on", all: "Every dart you've picked" }[f];
+  const desc_g = { 20: "Scoring darts (more than 170 left) at the 20, worked out from where each landed", 19: "Scoring darts (more than 170 left) at the 19, worked out from where each landed", 18: "Third darts at the 18 while scoring, after going 20 then 19 in the same visit" };
   const D = st.byDart, A = st.after;
   return `<div class="card stack" style="gap:10px"><p class="h2">Where your darts land</p>
       <div class="seg">${F.map(([k, l]) => `<button class="${k === f ? "on" : ""}" data-heat="${k}">${l}</button>`).join("")}</div>
+      ${f === "scoring" ? `<div class="chips"><button class="chip${sg ? "" : " on"}" data-sgrp="">All scoring</button>${[20, 19, 18].filter(n => st.heat["at" + n].size).map(n => `<button class="chip${n === sg ? " on" : ""}" data-sgrp="${n}">At the ${n} <span style="opacity:.6">${fmtN(sum([...st.heat["at" + n].values()]))}</span></button>`).join("")}</div>` : ""}
       ${f === "tgt" && tgts.length ? `<div class="chips">${tgts.slice(0, 9).map(([t, k]) => `<button class="chip${t === tT ? " on" : ""}" data-tgt="${t}">${/^S\d/.test(t) ? t : segLabel(t)} <span style="opacity:.6">${k}</span></button>`).join("")}${tgts.length > 9 ? `<select data-tgtsel aria-label="More targets" style="width:auto;padding:7px 10px"><option value="">More…</option>${tgts.slice(9).map(([t, k]) => `<option value="${t}"${t === tT ? " selected" : ""}>${segName(t)} (${k})</option>`).join("")}</select>` : ""}</div>` : ""}
       ${f === "dbl" && dbls.length ? `<div class="chips"><button class="chip${dT ? "" : " on"}" data-dblt="">All doubles</button>${dbls.slice(0, 12).map(([t, k]) => `<button class="chip${t === dT ? " on" : ""}" data-dblt="${t}">${segLabel(t)} <span style="opacity:.6">${k}</span></button>`).join("")}</div>` : ""}
-      <p class="sub" style="margin:0">${dT ? `Darts at ${segLabel(dT)}` : tT ? `Darts aimed at ${segName(tT)}: the aim you picked, or worked out from where it landed and your routes` : desc} · ${fmtN(tot)} darts. The dotted ring is misses off the board.</p>
+      <p class="sub" style="margin:0">${dT ? `Darts at ${segLabel(dT)}` : tT ? `Every dart aimed at ${segName(tT)}, scoring and finishing: the aim you picked, or worked out from where it landed and your routes` : sg ? desc_g[sg] : desc} · ${fmtN(tot)} darts. The dotted ring is misses off the board.</p>
       <div class="chips">${[["all", "All rings"], ["T", "Trebles"], ["D", "Doubles"], ["S", "Singles"], ["bull", "Bull"], ["O", "Outside"]].map(([k, l]) => `<button class="chip${k === ring ? " on" : ""}" data-ring="${k}">${l}</button>`).join("")}</div>
       ${tot ? boardHeat(m, ring, seg) : `<p class="empty">No darts here yet.</p>`}
       <p class="sub" style="margin:0;text-align:center">${["scoring", "tgt"].includes(f) ? "Tap a bed to see what your visit usually comes to when the first dart lands there." : "Tap a bed to see it on its own."}</p></div>
@@ -2369,6 +2372,7 @@ document.addEventListener("click", e => {
   if (d.quick) { if (cpuTurnNow()) return; sfx("click"); S.input = d.quick; submitScore(); return; }
   if (d.stab) { S.stats.tab = d.stab; render(); return; }
   if (d.heat) { S.stats.heat = d.heat; render(); return; }
+  if (d.sgrp != null) { S.stats.sgrp = d.sgrp ? +d.sgrp : null; S.stats.seg = null; render(); return; }
   if (d.ring) { S.stats.ring = d.ring; render(); return; }
   if (d.dbl) { S.stats.dbl = d.dbl; render(); return; }
   if (d.tgt) { S.stats.tgt = d.tgt; S.stats.seg = null; render(); return; }
