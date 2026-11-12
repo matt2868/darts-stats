@@ -379,6 +379,7 @@ button:active:not(:disabled){transform:scale(.97)}
 .ac.more{color:var(--muted)}
 .darts span{display:inline-flex;flex-direction:column;align-items:center;line-height:1.1}
 .darts span small,.slot small,.pickbtns small{font-size:10.5px;font-weight:600;color:var(--warm-dark);margin-top:1px}
+.pickbtns small.au{color:var(--muted);font-weight:500}
 .slot small.au{color:var(--muted);font-weight:500}
 .atd{display:inline-block;border:1.5px solid var(--acc);border-radius:5px;padding:0 3px;line-height:1.25;color:var(--ink)}
 .tbl.rep td{font-family:var(--disp);font-size:15px;font-weight:600}
@@ -1427,7 +1428,7 @@ function tapOrder(i) {
   const rest = P.combo.map((_, j) => j).filter(j => !P.used.includes(j));
   if (rest.length && new Set(rest.map(j => P.combo[j].x)).size === 1) rest.forEach(take);
   drawPicker();
-  if (P.order.length === P.combo.length) { P.auto = true; setTimeout(() => { if (S.sheet === P) { P.auto = false; finishOrder(); } }, 500); }
+  if (P.order.length === P.combo.length) { P.auto = true; setTimeout(() => { if (S.sheet === P) { P.auto = false; finishOrder(); } }, 850); }
 }
 function setAims(v, aims) { if (aims && aims.some(Boolean)) v.aim = aims.map(a => a || null); else delete v.aim; }
 function finishOrder() {
@@ -1476,7 +1477,7 @@ function drawPicker() {
     const n = P.combo.length, la = liveAims(v.r, P.order.map(o => o.x), P.order.map(o => o.a), leg.out);
     body = `
     <div class="slots">${Array.from({ length: n }, (_, i) => `<div class="slot${P.order[i] ? "" : " empty"}${i === P.order.length ? " next" : ""}"><span class="l">Dart ${i + 1}</span><span class="v">${P.order[i] ? segLabel(P.order[i].x) : "–"}</span>${P.order[i] ? captL(la[i], !!P.order[i].a) : ""}</div>`).join("")}</div>
-    <div class="pickbtns">${P.combo.map((it, i) => { const u = P.used.indexOf(i); return `<button data-pord="${i}" aria-label="${segLabel(it.x)}"${u >= 0 ? " disabled" : ""}><span>${segLabel(it.x)}</span>${u >= 0 ? `<small>dart ${u + 1}</small>` : it.a ? capt(it.a) : ""}</button>`; }).join("")}</div>
+    <div class="pickbtns">${P.combo.map((it, i) => { const u = P.used.indexOf(i); return `<button data-pord="${i}" aria-label="${segLabel(it.x)}"${u >= 0 ? " disabled" : ""}><span>${segLabel(it.x)}</span>${u >= 0 ? `<small>dart ${u + 1}</small>` : (() => { const a = P.aimSet ? P.aim : it.a, xs = P.order.map(o => o.x).concat(it.x), as = P.order.map(o => o.a).concat(a || null); return captL(liveAims(v.r, xs, as, leg.out).pop(), !!a); })()}</button>`; }).join("")}</div>
     <div class="row"><button class="btn ghost grow" data-act="p-back">Back</button><button class="btn ghost grow" data-act="p-reset"${P.order.length ? "" : " disabled"}>Start again</button></div>`;
   } else {
     body = `
@@ -1505,7 +1506,7 @@ function buildCheck() {
   const match = P.bust ? !!ev.b : (ev.s === v.s && !!ev.f === !!v.f && !ev.b);
   if (!match) { P.mis = ev; drawPicker(); return; }
   P.auto = true; drawPicker();   // complete: save on its own after a beat
-  setTimeout(() => { if (S.sheet !== P) return; P.auto = false; v.d = ev.d; setAims(v, P.b.aims.slice(0, ev.d.length)); v.s = ev.s; if (ev.b) v.b = true; askOrSave(leg, v, true); }, 500);
+  setTimeout(() => { if (S.sheet !== P) return; P.auto = false; v.d = ev.d; setAims(v, P.b.aims.slice(0, ev.d.length)); v.s = ev.s; if (ev.b) v.b = true; askOrSave(leg, v, true); }, 850);
 }
 function buildOk() {
   const P = S.sheet, v = P.v, leg = S.legs.get(P.leg), d = P.b.darts, dbl = leg.out === "double";
