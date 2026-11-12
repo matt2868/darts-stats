@@ -397,13 +397,13 @@ button:active:not(:disabled){transform:scale(.97)}
 .nc.sc{background:#f7f3ea;border-color:#ece4cf;color:#b3a57f}
 .nc.fin{background:#fff;border-color:var(--acc-line);color:var(--ink)}
 .nc.got{box-shadow:inset 0 0 0 2.5px #d4a531,0 0 0 1px #f1dc9c}
-.nc.shot{color:#b8480f}
+.nc.shot{color:#c22f22}.nc.fin.got{color:#9a6b06}
 .nc.start{background:#fff;border:2px solid var(--nav);color:var(--nav)}
 .legend .ramp{display:inline-block;width:46px;height:12px;border-radius:4px}
 .legend .ramp.fin{background:linear-gradient(90deg,rgb(214,233,221),rgb(20,78,52))}
 .legend .ramp.sc{background:linear-gradient(90deg,rgb(239,229,204),rgb(120,88,30))}
 .legend .dotdemo{background:#3f8a63!important;border-color:transparent!important}
-.legend .shotdemo{width:auto;height:auto;background:none;font-family:var(--disp);font-weight:700;font-size:13px;color:var(--warm-dark)}
+.legend .shotdemo{width:auto;height:auto;background:none;font-family:var(--disp);font-weight:700;font-size:13px;color:#c22f22}
 </style>
 </head>
 <body>
@@ -920,9 +920,12 @@ function numIndex() {
 const BOGEY = new Set([159, 162, 163, 165, 166, 168, 169]);
 const topOf = (m, n) => [...m.entries()].sort((a, b) => b[1] - a[1] || a[0] - b[0]).slice(0, n);
 /** How you made a score: the darts behind it, most common first. */
+const labVal = l => l === "Miss" ? 0 : l === "Bull" ? 50 : l === "25" ? 25 : l[0] === "T" ? 3 * +l.slice(1) + .2 : l[0] === "D" ? 2 * +l.slice(1) + .1 : +l;
 function comboList(dm, tot) {
-  const rows = [...dm.entries()].filter(([k]) => k).sort((a, b) => b[1] - a[1]), skipped = dm.get("") || 0, all = S.sheet && S.sheet.allC;
-  return `${(all ? rows : rows.slice(0, 3)).map(([k, c]) => brow(k, c + "×", pct(c, tot), c / rows[0][1] * 100)).join("")}${rows.length > 3 ? `<button class="more" data-act="c-more">${all ? "Show the top 3" : `+ ${rows.length - 3} more way${rows.length - 3 === 1 ? "" : "s"}`}</button>` : ""}${skipped ? `<p class="sub" style="margin-top:4px">${skipped} time${skipped === 1 ? "" : "s"} without the darts picked</p>` : ""}`;
+  const grp = new Map(); let skipped = 0;
+  for (const [k, c] of dm) { if (!k) { skipped += c; continue; } const g = k.split(" · ").sort((a, b) => labVal(b) - labVal(a)).join(" · "), e = grp.get(g) || { n: 0, ord: [] }; e.n += c; e.ord.push([k, c]); grp.set(g, e); }
+  const rows = [...grp.entries()].sort((a, b) => b[1].n - a[1].n), all = S.sheet && S.sheet.allC, open = S.sheet && S.sheet.cOpen;
+  return `${(all ? rows : rows.slice(0, 3)).map(([g, e]) => `<button class="browbtn${open === g ? " on" : ""}" data-cgrp="${g}">${brow(g, e.n + "×", pct(e.n, tot), e.n / rows[0][1].n * 100)}</button>${open === g ? `<div style="margin:2px 0 8px 12px"><p class="s13 muted" style="margin:2px 0">In the order thrown</p>${e.ord.sort((a, b) => b[1] - a[1]).map(([k, c]) => brow(k, c + "×", pct(c, e.n), c / e.n * 100, "var(--warm)")).join("")}</div>` : ""}`).join("")}${rows.length > 3 ? `<button class="more" data-act="c-more">${all ? "Show the top 3" : `+ ${rows.length - 3} more way${rows.length - 3 === 1 ? "" : "s"}`}</button>` : ""}${skipped ? `<p class="sub" style="margin-top:4px">${skipped} time${skipped === 1 ? "" : "s"} without the darts picked</p>` : ""}`;
 }
 function numCard(r, out, compact) {
   const e = numIndex().get(r), rt = r <= 170 ? route(r, 3, out || "double") : null, g = (l, v) => `<div><span class="l">${l}</span><span class="v">${v}</span></div>`;
@@ -950,7 +953,7 @@ function viewNumbers() {
     if ((f === "fin" && !fin) || (f === "got" && !outs) || (f === "todo" && (!fin || outs))) return "";
     let st = "", cls = (fin ? "fin" : "sc") + (shot ? " shot" : "");
     if (STARTS.has(n)) cls += " start";
-    else if (k) { const mx = n > 170 ? maxS : maxF, t = .12 + .88 * Math.log(1 + k) / Math.log(1 + mx); st = `background:${fin ? mix([214, 233, 221], [20, 78, 52], t) : mix([239, 229, 204], [120, 88, 30], t)};color:${shot ? (t > .52 ? "#ffc596" : t > .3 ? "#8f330a" : "#b8480f") : t > .52 ? "#fff" : fin ? "#14211a" : "#5b4a22"};border-color:transparent`; }
+    else if (k) { const mx = n > 170 ? maxS : maxF, t = .12 + .88 * Math.log(1 + k) / Math.log(1 + mx); st = `background:${fin ? mix([214, 233, 221], [20, 78, 52], t) : mix([239, 229, 204], [120, 88, 30], t)};color:${outs ? (t > .52 ? "#f5d36b" : "#9a6b06") : shot ? (t > .52 ? "#ffb4a6" : "#c22f22") : t > .52 ? "#fff" : fin ? "#14211a" : "#5b4a22"};border-color:transparent`; }
     return `<button class="nc ${cls}${outs ? " got" : ""}" style="${st}" data-num="${n}" aria-label="${n}, on it ${k} time${k === 1 ? "" : "s"}${shot ? `, ${e.att} at a double` : ""}${outs ? `, checked out ${outs}` : ""}">${n}</button>`;
   };
   const sec = (a, b, l) => { let h = ""; for (let n = a; n >= b; n--) h += cell(n); return h ? `<div class="card"><p class="h2" style="margin-bottom:10px">${l} <span class="small muted">${a}–${b}</span></p><div class="ngrid">${h}</div></div>` : ""; };
@@ -960,7 +963,7 @@ function viewNumbers() {
     <div class="card"><div class="between"><p class="h2">Checked out from ${got} of ${fins.length} finishes</p><span class="s13 muted">${pct(got, fins.length)}</span></div>
       <div class="bar" style="margin:10px 0 12px;height:10px"><i style="width:${got / fins.length * 100}%"></i></div>
       <div class="chips">${[["all", "All"], ["fin", "Finishes"], ["got", "Checked out"], ["todo", "Still to get"]].map(([k, l]) => `<button class="chip${f === k ? " on" : ""}" data-dexf="${k}">${l}</button>`).join("")}</div>
-      <div class="legend"><span>Visited less <i class="ramp fin"></i> more</span><span>No finish <i class="ramp sc"></i></span><span><i class="shotdemo">74</i>had a dart at a double</span><span><i class="nc fin got"></i>checked out</span><span><i class="nc fin start"></i>start</span><span><i class="nc fin"></i>not been on yet</span></div></div>
+      <div class="legend"><span>Visited less <i class="ramp fin"></i> more</span><span>No finish <i class="ramp sc"></i></span><span><i class="shotdemo">74</i>missed at a double, not checked out yet</span><span><i class="nc fin got"></i>checked out from it</span><span><i class="nc fin start"></i>start</span><span><i class="nc fin"></i>not been on yet</span></div></div>
     ${sec(501, 171, "Scoring")}${sec(170, 101, "Big finishes")}${sec(100, 41, "Finishes")}${sec(40, 2, "Doubles")}</div>`;
 }
 /** Every visit score you've made: how often, how (the darts), and where you were when you made it. */
@@ -992,7 +995,8 @@ function viewScores() {
     ${sec(180, 100, "Tons")}${sec(99, 60, "60 to 99")}${sec(59, 0, "Under 60")}</div>`;
 }
 function openScore(n, allC) {
-  S.sheet = { kind: "vsc", n, allC: !!allC };
+  const prev = S.sheet && S.sheet.kind === "vsc" && S.sheet.n === n ? S.sheet : {};
+  S.sheet = { kind: "vsc", n, allC: !!allC, cOpen: prev.cOpen };
   const { idx, vis } = scoreIndex(), e = idx.get(n), g = (l, v) => `<div><span class="l">${l}</span><span class="v">${v}</span></div>`;
   if (!e) { openSheet(`<div class="stack" style="gap:12px"><div><span class="s13 muted">Visit score</span><p class="sheet-title">${n}</p></div><div class="card"><p class="sub">You haven't scored ${n} yet.</p></div></div>`); return; }
   const fin = [...e.fin.entries()].map(([r, c]) => [`On ${r}${r === n ? " (checkout)" : ""}`, c]).concat(e.scoring ? [["More than 170", e.scoring]] : []).sort((a, b) => b[1] - a[1]), onFin = e.n - e.scoring;
@@ -1004,7 +1008,8 @@ function openScore(n, allC) {
       ${fin.slice(0, 8).map(([l, c]) => brow(l, c + "×", pct(c, e.n), c / fin[0][1] * 100)).join("")}${fin.length > 8 ? `<p class="sub">and ${fin.length - 8} others</p>` : ""}</div></div>`);
 }
 function openNum(n, sc, allC) {
-  S.sheet = { kind: "num", n, sc: sc ?? null, allC: !!allC };
+  const prev = S.sheet && S.sheet.kind === "num" && S.sheet.n === n ? S.sheet : {};
+  S.sheet = { kind: "num", n, sc: sc ?? null, allC: !!allC, cOpen: prev.cOpen };
   const e = numIndex().get(n), rt = n <= 170 ? route(n, 3, "double") : null, g = (l, v) => `<div><span class="l">${l}</span><span class="v">${v}</span></div>`;
   const head = `<div class="between"><div><span class="s13 muted">${n > 170 ? "Scoring" : BOGEY.has(n) ? "Bogey number" : "Finish"}</span><p class="sheet-title">${n}</p></div>${rt ? `<span class="tag">${rt.map(segLabel).join(" ")}</span>` : n <= 170 ? `<span class="tag" style="background:#b8a676">No finish</span>` : ""}</div>`;
   if (!e) { openSheet(`<div class="stack" style="gap:12px">${head}<div class="card"><p class="sub">You haven't been on ${n} yet.</p></div></div>`); return; }
@@ -1759,7 +1764,7 @@ function compute(legs) {
         v.d.forEach((x, k) => {
           const a = aims[k], key = x === "M" ? (a.n && a.n !== 25 ? "O" + a.n : null) : x;
           if (key) { inc(st.heat.all, key); if (r > 170) { inc(st.heat.scoring, key); if (a.n === 20) inc(st.heat.at20, key); if (a.n === 19) inc(st.heat.at19, key); if (a.n === 18) inc(st.heat.at18, key); } else inc(st.heat.finishing, key); }
-          if (a.seg && key) { if (!a.dbl) { const hm = st.heatT.get(a.seg) || new Map(); inc(hm, key); st.heatT.set(a.seg, hm); }   /* darts at the finishing double (the bull on 50 too) live under At a double */ const e = st.tgt.get(a.seg) || { n: 0, hit: 0, bed: 0 }; e.n++; if (x === a.seg) e.hit++; if (x !== "M" && segNum(x) === a.n) e.bed++; st.tgt.set(a.seg, e); }
+          if (a.seg && key) { { const hm = st.heatT.get(a.seg) || new Map(); inc(hm, key); st.heatT.set(a.seg, hm); }   /* doubles 1 to 20 are left out of By target when it's drawn; the bull stays in */ const e = st.tgt.get(a.seg) || { n: 0, hit: 0, bed: 0 }; e.n++; if (x === a.seg) e.hit++; if (x !== "M" && segNum(x) === a.n) e.bed++; st.tgt.set(a.seg, e); }
           if (r <= 170 && !a.dbl && a.seg && /^S(1[1-9]|20)$/.test(a.seg)) { st.bigS.n++; if (x === a.seg) st.bigS.hit++; if (x !== "M" && segNum(x) === a.n) { st.bigS.bed++; if (x[0] === "T") st.bigS.t++; if (x[0] === "D") st.bigS.d++; } }   // needing a big single to set up a finish
           if (a.dbl && key) { inc(st.heat.dbl, key); const hm = st.heatDblT.get(a.dbl) || new Map(); inc(hm, key); st.heatDblT.set(a.dbl, hm); }
           if (k === 0 && key && r > 170 && !v.b) { const e = st.first.get(key) || { n: 0, tot: 0, sc: new Map() }; e.n++; e.tot += v.s; inc(e.sc, v.s); st.first.set(key, e); st.firstAll.n++; st.firstAll.tot += v.s; }
@@ -2064,7 +2069,7 @@ function statsAccuracy(st) {
       <div class="seg">${F.map(([k, l]) => `<button class="${k === f ? "on" : ""}" data-heat="${k}">${l}</button>`).join("")}</div>
       ${f === "scoring" ? `<div class="chips"><button class="chip${sg ? "" : " on"}" data-sgrp="">All scoring</button>${[20, 19, 18].filter(n => st.heat["at" + n].size).map(n => `<button class="chip${n === sg ? " on" : ""}" data-sgrp="${n}">At the ${n} <span style="opacity:.6">${fmtN(sum([...st.heat["at" + n].values()]))}</span></button>`).join("")}</div>` : ""}
       ${f === "tgt" && tgts.length ? `<div class="chips">${tgts.slice(0, 9).map(([t, k]) => `<button class="chip${t === tT ? " on" : ""}" data-tgt="${t}">${/^S\d/.test(t) ? t : segLabel(t)} <span style="opacity:.6">${k}</span></button>`).join("")}${tgts.length > 9 ? `<select data-tgtsel aria-label="More targets" style="width:auto;padding:7px 10px"><option value="">More…</option>${tgts.slice(9).map(([t, k]) => `<option value="${t}"${t === tT ? " selected" : ""}>${segName(t)} (${k})</option>`).join("")}</select>` : ""}</div>` : ""}
-      ${f === "dbl" && dbls.length ? `<div class="chips"><button class="chip${dT ? "" : " on"}" data-dblt="">All doubles</button>${dbls.slice(0, 12).map(([t, k]) => `<button class="chip${t === dT ? " on" : ""}" data-dblt="${t}">${segLabel(t)} <span style="opacity:.6">${k}</span></button>`).join("")}</div>` : ""}
+      ${f === "dbl" && dbls.length ? `<div class="chips"><button class="chip${dT ? "" : " on"}" data-dblt="">All doubles</button>${dbls.map(([t, k]) => `<button class="chip${t === dT ? " on" : ""}" data-dblt="${t}">${segLabel(t)} <span style="opacity:.6">${k}</span></button>`).join("")}</div>` : ""}
       <p class="sub" style="margin:0">${dT ? `Darts at ${segLabel(dT)}` : tT ? `Every dart aimed at ${segName(tT)}, scoring and finishing: the aim you picked, or worked out from where it landed and your routes` : sg ? desc_g[sg] : desc} · ${fmtN(tot)} darts. The dotted ring is misses off the board${dT || tT || sg ? "; the target is outlined in green" : ""}.</p>
       <div class="chips">${[["all", "All rings"], ["T", "Trebles"], ["D", "Doubles"], ["S", "Singles"], ["bull", "Bull"], ["O", "Outside"]].map(([k, l]) => `<button class="chip${k === ring ? " on" : ""}" data-ring="${k}">${l}</button>`).join("")}</div>
       ${tot ? boardHeat(m, ring, seg, dT || tT || (sg ? (sg === 18 ? "T18" : "T" + sg) : null)) : `<p class="empty">No darts here yet.</p>`}
@@ -2502,6 +2507,8 @@ document.addEventListener("click", e => {
   if (vs) { openScore(+vs.dataset.vsc); return; }
   const ns = e.target.closest("[data-nsc]");
   if (ns && S.sheet && S.sheet.kind === "num") { const x = +ns.dataset.nsc; openNum(S.sheet.n, S.sheet.sc === x ? null : x); return; }
+  const cg = e.target.closest("[data-cgrp]");
+  if (cg && S.sheet) { const P = S.sheet; P.cOpen = P.cOpen === cg.dataset.cgrp ? null : cg.dataset.cgrp; if (P.kind === "num") openNum(P.n, P.sc, P.allC); else if (P.kind === "vsc") openScore(P.n, P.allC); return; }
   const nt = e.target.closest("[data-ntab]");
   if (nt) { S.numTab = nt.dataset.ntab; render(); return; }
   const wr = e.target.closest("[data-wrap]");
