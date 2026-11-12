@@ -371,6 +371,18 @@ button:active:not(:disabled){transform:scale(.97)}
 #wrap .trip{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px} #wrap .trip .big{font-size:64px}
 #wrap .sum{display:grid;grid-template-columns:repeat(3,1fr);gap:16px 10px;margin:10px 0 24px}
 #wrap .sum div{display:flex;flex-direction:column} #wrap .sum b{font-family:var(--disp);font-size:32px} #wrap .sum span{font-size:13px;opacity:.75}
+.phead{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:10px}
+.aimrow{display:flex;flex-wrap:wrap;align-items:center;gap:5px}
+.aimgrid{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:5px;width:100%}
+.ac{min-width:40px;height:34px;padding:0 8px;border:1.5px solid var(--line);background:#fff;border-radius:9px;font-size:13px;font-weight:700;color:var(--ink)}
+.ac.on{background:var(--warm-soft);border-color:var(--warm);color:var(--warm-dark)}
+.ac.more{color:var(--muted)}
+.darts span{display:inline-flex;flex-direction:column;align-items:center;line-height:1.1}
+.darts span small,.slot small,.pickbtns small{font-size:10.5px;font-weight:600;color:var(--warm-dark);margin-top:1px}
+.tbl.rep td{font-family:var(--disp);font-size:15px;font-weight:600}
+.tbl.rep td:first-child{font-family:"DM Sans",sans-serif;font-weight:400;font-size:14px}
+.tbl.rep td.win{color:var(--acc);font-weight:800}
+.tbl.rep td.win::after{content:" ●";font-size:8px;vertical-align:middle}
 </style>
 </head>
 <body>
@@ -392,7 +404,7 @@ button:active:not(:disabled){transform:scale(.97)}
 <input type="file" id="importFile" accept="application/json,.json" hidden>
 <script>
 "use strict";
-const APP_VERSION = "1.8";
+const APP_VERSION = "1.9";
 /* ===================== helpers ===================== */
 const $ = (s, el = document) => el.querySelector(s);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -550,7 +562,7 @@ function firsts(rem, left, out) {   // best first darts of a finish, or of a set
     };
     if (rem <= left * 60) rec([], rem);
   }
-  if (!best.size && out === "double" && rem <= 100) for (const x of ALL) { if (x === "M" || x[0] === "D") continue; const t = finishTarget(rem - VAL[x]); if (t) best.set(x, (DBL_PREF[t] ?? 3) + (x[0] === "T" ? .4 : 0) + (x === "SB" ? 1 : 0)); }
+  if ((!best.size || Math.min(...best.values()) >= 2) && out === "double" && rem <= 100) for (const x of ALL) { /* set-ups too, when the only way out is awkward, like the bull on 50 */ if (x === "M" || x[0] === "D") continue; const t = finishTarget(rem - VAL[x]); if (t && !best.has(x)) best.set(x, (DBL_PREF[t] ?? 3) + (x[0] === "T" ? .4 : 0) + (x === "SB" ? 1 : 0)); }
   return [...best.entries()].sort((a, b) => a[1] - b[1]).slice(0, 3);
 }
 function aimMix(rem, left, out, aim = "T20") {
@@ -578,13 +590,17 @@ function suggest(score, rem, aim, out, finishing) {
     let tot = 0, best = null, bp = -1;
     for (const p of perms(c.slice().sort((x, y) => VAL[y] - VAL[x]))) { if (!validSeq(p, rem, finishing, out)) continue; const pr = seqProb(p, rem, aim, out); tot += pr; if (pr > bp * (1 + 1e-9)) { bp = pr; best = p; } }
     if (!best) continue;
-    const key = comboKey(c), used = H.count.get(score + "|" + key) || 0;
+    const key = comboKey(c), used = H.count.get(score + "|" + key) || 0, w = tot * (1 + 6 * used);
     let order = best;
     const prev = H.order.get(key); if (prev && validSeq(prev, rem, finishing, out)) order = prev.slice();
-    res.push({ key, darts: order, w: tot * (1 + 6 * used), used });
+    let r = rem, amb = null;
+    order.forEach((x, i) => { const po = dartPost(x, r, 3 - i, out); if (po && po.length > 1 && po[1].p >= .3 && (!amb || po[1].p > amb.po[1].p)) amb = { i, po }; r -= VAL[x]; });
+    const items = order.map(x => ({ x, a: null }));
+    if (amb) amb.po.slice(0, 2).forEach(alt => { const it = items.map(o => ({ ...o })); it[amb.i].a = alt.a; res.push({ key: key + "@" + alt.a, darts: order, items: it, w: w * alt.p, used }); });
+    else res.push({ key, darts: order, items, w, used });
   }
   res.sort((a, b) => b.w - a.w);
-  return res.filter((r, i) => i < 3 || r.used || r.w >= res[0].w * 0.005).slice(0, 5);
+  return res.filter((r, i) => i < 3 || r.used || r.w >= res[0].w * 0.005).slice(0, 6);
 }
 
 /* ===================== state & storage ===================== */
@@ -644,9 +660,10 @@ function pickHistory() {
     if (!v.d || !v.d.length) return;
     const k = comboKey(v.d); count.set(v.s + "|" + k, (count.get(v.s + "|" + k) || 0) + 1); order.set(k, v.d);
     let r = v.r;
-    v.d.forEach(x => {
-      if (x !== "M" && r != null) {
-        const n = segNum(x);
+    v.d.forEach((x, k) => {
+      const ma = v.aim && v.aim[k];
+      if ((x !== "M" || ma) && r != null) {
+        const n = ma ? (ma === "B" || ma === "25" ? 25 : segNum(/^[SDT]/.test(ma) ? ma : "S" + ma)) : segNum(x);
         if (r <= 170) { const m = aimAt.get(r) || new Map(); m.set(n, (m.get(n) || 0) + 1); aimAt.set(r, m); }
         else if (G20.has(n)) scoreGrp[20]++; else if (G19.has(n)) scoreGrp[19]++;
       }
@@ -725,7 +742,12 @@ function startLeg() {
   const leg = { id: uid(), sid, n, st: S.set.start, out: S.set.out, at: Date.now(), v: [], done: false };
   persist([leg]); S.meta.active = leg.id; saveMeta(); S.input = ""; render(); say("Game on");
 }
-function endSession() { S.meta.active = null; S.meta.sid = null; saveMeta(); closeSheet(); render(); toast("Session ended"); }
+function endSession() {
+  const legs = S.meta.sid ? sessionLegs(S.meta.sid).filter(l => l.v.length) : [];
+  S.meta.active = null; S.meta.sid = null; saveMeta(); closeSheet(); render();
+  if (!legs.length) { toast("Session ended"); return; }
+  setTimeout(() => { S.sheet = { kind: "report" }; openSheet(`<div class="stack" style="gap:14px"><div><span class="s13 muted">${fmtDate(legs[0].at)}</span><p class="sheet-title">Session summary</p></div>${sessionReport(legs)}<button class="btn primary" data-act="close">Done</button></div>`); }, 320);
+}
 
 /* ===================== rendering ===================== */
 function render() {
@@ -1099,6 +1121,47 @@ function bullThrow(i) {
     drawBull();
   }, 800);
 }
+/** The CPU's side of a match, worked out from its darts. */
+function cpuStats(legs) {
+  const o = { p: 0, d: 0, f9p: 0, f9d: 0, sp: 0, sd: 0, s100: 0, s140: 0, s180: 0, hi: 0, busts: 0, att: 0, outs: 0, best: null, hiOut: null, from: [] };
+  legs.forEach(l => {
+    let r = l.st, ld = 0, df = null;
+    (l.m.cpuV || []).forEach((v, i) => {
+      const dn = v.f ? v.d.length : 3, sc = v.b ? 0 : v.s;
+      o.p += sc; o.d += dn; ld += dn; if (i < 3) { o.f9p += sc; o.f9d += dn; }
+      if (r > 170) { o.sp += sc; o.sd += dn; } else df = (df || 0) + dn;
+      if (v.b) o.busts++; else { if (v.s >= 100) o.s100++; if (v.s >= 140) o.s140++; if (v.s === 180) o.s180++; o.hi = Math.max(o.hi, v.s); }
+      let rr = v.r; for (const x of v.d) { if (finishTarget(rr)) o.att++; rr -= VAL[x]; if (rr <= 1) break; }
+      if (v.f) { o.outs++; o.hiOut = Math.max(o.hiOut || 0, v.s); }
+      r -= sc;
+    });
+    if (l.m.res === "lost") { o.best = o.best == null ? ld : Math.min(o.best, ld); if (df != null) o.from.push(df); }
+  });
+  return { ...o, avg: o.d ? o.p / o.d * 3 : null, f9: o.f9d ? o.f9p / o.f9d * 3 : null, sca: o.sd ? o.sp / o.sd * 3 : null, co: o.att ? o.outs / o.att * 100 : null, fromM: mean(o.from) };
+}
+function matchReport(mid) {
+  const ml = matchLegs(mid).sort((a, b) => a.at - b.at); if (!ml.length) return "";
+  const me = compute(ml), cp = cpuStats(ml), lvl = ml[0].m.lvl, won = ml.filter(l => l.m.res === "won").length, lost = ml.filter(l => l.m.res === "lost").length;
+  const myHi = Math.max(0, ...ml.flatMap(l => l.v.filter(v => !v.b).map(v => v.s)));
+  const rows = [["Average", me.avg, cp.avg, 1, f1], ["Scoring average", me.sca, cp.sca, 1, f1], ["First 9", me.f9, cp.f9, 1, f1], ["100+", me.s100, cp.s100, 1], ["140+", me.s140, cp.s140, 1], ["180s", me.s180, cp.s180, 1],
+    ["Highest score", myHi || null, cp.hi || null, 1], ["Checkout", me.dd ? me.outs / me.dd * 100 : null, cp.co, 1, v => f1(v) + "%"], ["Darts at a double", me.dd, cp.att, 0], ["Highest checkout", me.highOut, cp.hiOut, 1],
+    ["Best leg", me.best, cp.best, -1, v => v + " darts"], ["Darts from 170", mean(me.phase.from), cp.fromM, -1, f1], ["Busts", me.busts, cp.busts, -1]];
+  const cell = (v, o, dir, fmt) => { const w = dir && v != null && o != null && v !== o && (v - o) * dir > 0; return `<td class="${w ? "win" : ""}">${v == null ? "–" : (fmt || String)(v)}</td>`; };
+  return `<div class="card"><table class="tbl rep"><tr><th></th><th>You</th><th>CPU ${lvl}</th></tr><tr><td class="muted">Legs</td>${cell(won, lost, 1)}${cell(lost, won, 1)}</tr>
+      ${rows.map(([l, a, b, dir, fmt]) => `<tr><td class="muted">${l}</td>${cell(a, b, dir, fmt)}${cell(b, a, dir, fmt)}</tr>`).join("")}</table></div>
+    <div class="card"><p class="h2" style="margin-bottom:6px">Leg by leg</p><table class="tbl"><tr><th>Leg</th><th>Won by</th><th>Darts</th><th>You</th><th>CPU</th></tr>
+      ${ml.map((l, i) => { const w = l.m.res === "won", dn = w ? legDarts(l) : sum((l.m.cpuV || []).map(v => v.f ? v.d.length : 3)); return `<tr><td>${i + 1}</td><td><b style="color:${w ? "var(--acc)" : l.m.res ? "var(--warm-dark)" : "var(--muted)"}">${w ? "You" : l.m.res ? "CPU" : "–"}</b></td><td class="muted">${l.m.res ? dn : "–"}</td><td><b>${l.v.length ? f1(avgOf([l])) : "–"}</b></td><td>${(l.m.cpuV || []).length ? f1(cpuAvg([l])) : "–"}</td></tr>`; }).join("")}</table></div>`;
+}
+function sessionReport(legs) {
+  const st = compute(legs), A = statsFor("all"), g = (l, v) => `<div><span class="l">${l}</span><span class="v">${v}</span></div>`;
+  const d = st.avg != null && A.avg != null && legs.length < liveLegs().length ? st.avg - A.avg : null;
+  return `<div class="card"><div class="grid3">${g("Legs", `${st.legs}${st.done < st.legs ? ` <span class="small muted">(${st.done} won)</span>` : ""}`)}${g("Average", st.avg == null ? "–" : f1(st.avg) + (d == null ? "" : ` <span class="fm ${d >= 0 ? "up" : "down"}"><i>${d >= 0 ? "▲" : "▼"}</i></span>`))}${g("Scoring avg", st.sca == null ? "–" : f1(st.sca))}
+    ${g("First 9", st.f9 == null ? "–" : f1(st.f9))}${g("Checkout", st.dd ? pct(st.outs, st.dd) : "–")}${g("Best leg", st.best ? st.best + " darts" : "–")}
+    ${g("100+ · 140+ · 180", `${st.s100} · ${st.s140} · ${st.s180}`)}${g("Top checkout", st.highOut ?? "–")}${g("Darts from 170", st.phase.from.length ? f1(mean(st.phase.from)) : "–")}</div>
+    ${d == null ? "" : `<p class="sub" style="margin-top:8px">${d >= 0 ? "Up" : "Down"} ${f1(Math.abs(d))} on your all-time average.</p>`}</div>
+    <div class="card"><p class="h2" style="margin-bottom:6px">Leg by leg</p><table class="tbl"><tr><th>Leg</th><th>Darts</th><th>Average</th><th>Out</th></tr>
+      ${legs.slice().sort((a, b) => a.at - b.at).map((l, i) => `<tr><td>${i + 1}${l.m ? ` <span class="small muted">vs CPU</span>` : ""}</td><td class="muted">${l.done ? legDarts(l) : "–"}</td><td><b>${l.v.length ? f1(avgOf([l])) : "–"}</b></td><td>${l.done ? l.v[l.v.length - 1].s : "–"}</td></tr>`).join("")}</table></div>`;
+}
 function openLegResult(leg) {
   const m = M(); if (!m) return;
   const won = leg.m.res === "won", over = m.me >= m.first || m.cpu >= m.first, ml = matchLegs(m.id);
@@ -1111,7 +1174,7 @@ function openLegResult(leg) {
   openSheet(`<div class="stack" style="gap:14px">
     <div><span class="s13 muted">${esc(sub)}</span><p class="sheet-title">${head}</p></div>
     <p class="score" style="margin:4px 0">You ${m.me} – ${m.cpu} CPU</p>
-    <div class="trio card"><div><span class="l">Your average</span><span class="v">${f1(avgOf(ml) || 0)}</span></div><div><span class="l">CPU average</span><span class="v">${f1(cpuAvg(ml) || 0)}</span></div><div><span class="l">This leg</span><span class="v">${leg.v.length ? f1(avgOf([leg])) : "–"}</span></div></div>
+    ${over ? `<p class="h2" style="margin:2px 0 -4px">Match report</p>${matchReport(m.id)}` : `<div class="trio card"><div><span class="l">Your average</span><span class="v">${f1(avgOf(ml) || 0)}</span></div><div><span class="l">CPU average</span><span class="v">${f1(cpuAvg(ml) || 0)}</span></div><div><span class="l">This leg</span><span class="v">${leg.v.length ? f1(avgOf([leg])) : "–"}</span></div></div>`}
     ${over ? `<div class="row"><button class="btn ghost grow" data-act="m-end">Done</button><button class="btn primary grow" data-act="m-rematch">Rematch</button></div>`
       : `<div class="row">${won ? `<button class="btn ghost grow" data-act="undo-out">Undo checkout</button>` : ""}<button class="btn ghost grow" data-act="m-end">End match</button></div><button class="btn primary" data-act="m-next">Next leg</button>`}</div>`);
 }
@@ -1176,6 +1239,7 @@ function askOrSave(leg, v, picked) {
 }
 function saveVisit(leg, v) {
   Object.keys(v).forEach(k => v[k] === undefined && delete v[k]);
+  if (v.aim) { const u = S.set.aimUse || (S.set.aimUse = {}); new Set(v.aim.filter(a => a && !/^[SDT]/.test(a))).forEach(a => u[a] = (u[a] || 0) + 1); saveSettings(); }
   leg.v.push(v); S.animNew = true; feedback(leg, v);
   const m = leg.m && M() && M().id === leg.m.id ? M() : null;
   S.meta.sLast = Date.now();
@@ -1204,12 +1268,12 @@ function closeSheet() {
   sheetT = setTimeout(() => { if (!sh.classList.contains("open")) { sh.style.display = "none"; sc.style.display = "none"; } }, 300);
 }
 function openPicker(leg, draft) {
-  const list = suggest(draft.s, draft.r, "T20", leg.out, !!draft.f).map(o => ({ ...o, set: draft.f ? o.darts.slice() : o.darts.slice().sort((a, b) => VAL[b] - VAL[a] || IDX[a] - IDX[b]) }));   // finishes show the double last
-  S.sheet = { kind: "pick", leg: leg.id, v: draft, list, step: list.length ? "list" : "build", b: { mult: "S", darts: [] } };
+  const list = suggest(draft.s, draft.r, "T20", leg.out, !!draft.f).map(o => ({ ...o, items: draft.f ? o.items : o.items.slice().sort((a, b) => VAL[b.x] - VAL[a.x] || IDX[a.x] - IDX[b.x]) }));   // finishes show the double last
+  S.sheet = { kind: "pick", leg: leg.id, v: draft, list, step: list.length ? "list" : "build", b: { mult: "S", darts: [], aims: [] }, aim: null };
   drawPicker();
 }
 function openBust(leg, draft) {
-  S.sheet = { kind: "pick", leg: leg.id, v: draft, list: [], step: "build", bust: true, b: { mult: "S", darts: [] } };
+  S.sheet = { kind: "pick", leg: leg.id, v: draft, list: [], step: "build", bust: true, b: { mult: "S", darts: [], aims: [] }, aim: null };
   drawPicker();
 }
 /** Sound, voice, vibration and banners after one of your visits. */
@@ -1317,27 +1381,39 @@ function say(text, force) {
   } catch (e) {}
 }
 
+const ikey = it => it.x + "|" + (it.a || ""), ifrom = k => { const [x, a] = k.split("|"); return { x, a: a || null }; };
 function chooseCombo(i) {
   const P = S.sheet, leg = S.legs.get(P.leg), o = P.list[i];
-  P.combo = o.set.slice();
-  const valid = perms(P.combo).filter(q => validSeq(q, P.v.r, !!P.v.f, leg.out));
-  if (valid.length === 1) { P.order = valid[0]; return finishOrder(); }   // only one way it could have gone
+  P.combo = o.items.map(it => ({ x: it.x, a: P.aim || it.a || null }));   // an aim picked up front covers the whole visit
+  const valid = perms(P.combo.map(ikey)).filter(q => validSeq(q.map(k => k.split("|")[0]), P.v.r, !!P.v.f, leg.out));
+  if (valid.length === 1) { P.order = valid[0].map(ifrom); return finishOrder(); }   // only one way it could have gone
   P.used = []; P.order = []; P.step = "order"; drawPicker();
 }
 function tapOrder(i) {
   const P = S.sheet; if (!P || P.used.includes(i) || P.auto) return;
-  P.used.push(i); P.order.push(P.combo[i]); sfx("click");
+  const take = j => { P.used.push(j); P.order.push({ x: P.combo[j].x, a: P.aimSet ? P.aim : P.combo[j].a }); };   // an aim picked now applies from this dart on
+  take(i); sfx("click");
   const rest = P.combo.map((_, j) => j).filter(j => !P.used.includes(j));
-  if (rest.length && new Set(rest.map(j => P.combo[j])).size === 1) rest.forEach(j => { P.used.push(j); P.order.push(P.combo[j]); });
+  if (rest.length && new Set(rest.map(j => P.combo[j].x)).size === 1) rest.forEach(take);
   drawPicker();
   if (P.order.length === P.combo.length) { P.auto = true; setTimeout(() => { if (S.sheet === P) { P.auto = false; finishOrder(); } }, 280); }
 }
+function setAims(v, aims) { if (aims && aims.some(Boolean)) v.aim = aims.map(a => a || null); else delete v.aim; }
 function finishOrder() {
-  const P = S.sheet, leg = S.legs.get(P.leg);
-  if (!validSeq(P.order, P.v.r, !!P.v.f, leg.out)) { toast("The double has to be the last dart: tap them again"); P.used = []; P.order = []; P.step = "order"; drawPicker(); return; }
-  P.v.d = P.order.slice(); askOrSave(leg, P.v, true);
+  const P = S.sheet, leg = S.legs.get(P.leg), xs = P.order.map(o => o.x);
+  if (!validSeq(xs, P.v.r, !!P.v.f, leg.out)) { toast("The double has to be the last dart: tap them again"); P.used = []; P.order = []; P.step = "order"; drawPicker(); return; }
+  P.v.d = xs; setAims(P.v, P.order.map(o => o.a)); askOrSave(leg, P.v, true);
 }
-const dchip = x => `<span>${segLabel(x)}</span>`;
+function aimChips(P) {
+  const use = S.set.aimUse || {}, base = ["20", "19", "B", "25", "18"], all = [...Array(20)].map((_, i) => String(20 - i)).concat(["B", "25"]);
+  const rank = a => base.includes(a) ? base.indexOf(a) : 10 + all.indexOf(a);
+  const vis = all.slice().sort((a, b) => (use[b] || 0) - (use[a] || 0) || rank(a) - rank(b)).slice(0, 5);
+  if (P.aim && !/^[SDT]/.test(P.aim) && !vis.includes(P.aim)) vis[4] = P.aim;
+  return `<div class="aimrow"><span class="small muted">Aim</span><button class="ac${!P.aim ? " on" : ""}" data-paim="">Auto</button>${vis.map(a => `<button class="ac${P.aim === a ? " on" : ""}" data-paim="${a}">${aimLabel(a)}</button>`).join("")}<button class="ac more" data-act="aim-more">${P.aimMore ? "Less" : "More"}</button></div>
+    ${P.aimMore ? `<div class="aimgrid">${all.map(a => `<button class="ac${P.aim === a ? " on" : ""}" data-paim="${a}">${aimLabel(a)}</button>`).join("")}</div>` : ""}`;
+}
+const capt = a => a ? `<small>at ${a === "DB" ? "bull" : a === "SB" ? "25" : /^[SDT]/.test(a) ? a.slice(1) : aimLabel(a)}</small>` : "";
+const dchip = it => `<span>${segLabel(it.x)}${capt(it.a)}</span>`;
 function drawPicker() {
   const P = S.sheet, v = P.v, leg = S.legs.get(P.leg), after = v.r - v.s;
   const head = P.bust ? `Bust from ${v.r}` : v.f ? `Checkout · ${v.s}` : v.b ? `Bust · ${v.s} thrown` : `Visit ${leg.v.length + 1} · leaves ${after}`;
@@ -1349,7 +1425,7 @@ function drawPicker() {
     const note = P.bust ? (B.darts.length ? `Total ${tot}. The last dart should be the one that bust.` : "Tap the darts in the order you threw them, ending with the one that bust.")
       : B.darts.length ? `Total ${tot}${need > 0 ? ` · ${need} still to place` : need < 0 ? ` · ${-need} too many` : " ✓"}${v.f && leg.out === "double" ? ". The last dart must be a double." : ""}` : `Tap the darts in the order you threw them.${v.f && leg.out === "double" ? " The last dart must be a double." : ""}`;
     body = `
-    <div class="slots">${[0, 1, 2].map(i => `<button class="slot${B.darts[i] ? "" : " empty"}${i === B.darts.length ? " next" : ""}" data-bslot="${i}"><span class="l">Dart ${i + 1}</span><span class="v">${B.darts[i] ? segLabel(B.darts[i]) : "–"}</span></button>`).join("")}</div>
+    <div class="slots">${[0, 1, 2].map(i => `<button class="slot${B.darts[i] ? "" : " empty"}${i === B.darts.length ? " next" : ""}" data-bslot="${i}"><span class="l">Dart ${i + 1}</span><span class="v">${B.darts[i] ? segLabel(B.darts[i]) : "–"}</span>${B.aims[i] ? capt(B.aims[i]) : ""}</button>`).join("")}</div>
     <div class="seg">${["S", "D", "T"].map(m => `<button class="${B.mult === m ? "on" : ""}" data-bmult="${m}">${m === "S" ? "Single" : m === "D" ? "Double" : "Treble"}</button>`).join("")}</div>
     <div class="numgrid">${nums}<button data-bseg="SB">25</button><button data-bseg="DB">Bull</button><button data-bseg="M" style="grid-column:span 3">Miss</button></div>
     ${P.mis ? (() => { const e = P.mis, what = e.b ? `${e.s} and bust` : e.f ? `a ${e.s} checkout` : String(e.s);
@@ -1361,16 +1437,17 @@ function drawPicker() {
     title = "Tap them in the order you threw";
     const n = P.combo.length;
     body = `
-    <div class="slots">${Array.from({ length: n }, (_, i) => `<div class="slot${P.order[i] ? "" : " empty"}${i === P.order.length ? " next" : ""}"><span class="l">Dart ${i + 1}</span><span class="v">${P.order[i] ? segLabel(P.order[i]) : "–"}</span></div>`).join("")}</div>
-    <div class="pickbtns">${P.combo.map((x, i) => { const u = P.used.indexOf(i); return `<button data-pord="${i}" aria-label="${segLabel(x)}"${u >= 0 ? " disabled" : ""}><span>${segLabel(x)}</span>${u >= 0 ? `<small>dart ${u + 1}</small>` : ""}</button>`; }).join("")}</div>
+    <div class="slots">${Array.from({ length: n }, (_, i) => `<div class="slot${P.order[i] ? "" : " empty"}${i === P.order.length ? " next" : ""}"><span class="l">Dart ${i + 1}</span><span class="v">${P.order[i] ? segLabel(P.order[i].x) : "–"}</span>${P.order[i] && P.order[i].a ? capt(P.order[i].a) : ""}</div>`).join("")}</div>
+    <div class="pickbtns">${P.combo.map((it, i) => { const u = P.used.indexOf(i); return `<button data-pord="${i}" aria-label="${segLabel(it.x)}"${u >= 0 ? " disabled" : ""}><span>${segLabel(it.x)}</span>${u >= 0 ? `<small>dart ${u + 1}</small>` : it.a ? capt(it.a) : ""}</button>`; }).join("")}</div>
     <div class="row"><button class="btn ghost grow" data-act="p-back">Back</button><button class="btn ghost grow" data-act="p-reset"${P.order.length ? "" : " disabled"}>Start again</button></div>`;
   } else {
     body = `
-    <div class="opts">${P.list.map((o, i) => `<button class="opt" data-popt="${i}"><span class="darts">${o.set.map(dchip).join("")}</span><span class="small muted">${o.used ? "usual" : ""}</span></button>`).join("")}
+    <div class="opts">${P.list.map((o, i) => `<button class="opt" data-popt="${i}"><span class="darts">${o.items.map(dchip).join("")}</span><span class="small muted">${o.used ? "usual" : ""}</span></button>`).join("")}
       <button class="opt" data-act="p-build"><span class="grow" style="font-size:15px;font-weight:500">Something else…</span><span class="small muted">tap each dart</span></button></div>
     <button class="btn ghost" data-act="p-skip">Skip darts</button>`;
   }
-  openSheet(`<div class="stack" style="gap:14px"><div><span class="s13 muted">${esc(head)}</span><p class="sheet-title">${esc(title)}</p></div>${body}</div>`);
+  openSheet(`<div class="stack" style="gap:14px"><div class="phead"><div><span class="s13 muted">${esc(head)}</span><p class="sheet-title">${esc(title)}</p></div>${aimChips(P)}</div>
+    ${P.aim ? `<p class="sub" style="margin:-6px 0 0">Aiming at ${aimLabel(P.aim)} ${P.step === "list" ? "for this visit" : "from the next dart you tap"}.</p>` : ""}${body}</div>`);
 }
 /** What a set of darts actually does from a score: its total, and whether it checks out or busts (darts after a bust are dropped). */
 function evalDarts(r0, darts, out) {
@@ -1390,7 +1467,7 @@ function buildCheck() {
   const match = P.bust ? !!ev.b : (ev.s === v.s && !!ev.f === !!v.f && !ev.b);
   if (!match) { P.mis = ev; drawPicker(); return; }
   P.auto = true; drawPicker();   // complete: save on its own after a beat
-  setTimeout(() => { if (S.sheet !== P) return; P.auto = false; v.d = ev.d; v.s = ev.s; if (ev.b) v.b = true; askOrSave(leg, v, true); }, 300);
+  setTimeout(() => { if (S.sheet !== P) return; P.auto = false; v.d = ev.d; setAims(v, P.b.aims.slice(0, ev.d.length)); v.s = ev.s; if (ev.b) v.b = true; askOrSave(leg, v, true); }, 300);
 }
 function buildOk() {
   const P = S.sheet, v = P.v, leg = S.legs.get(P.leg), d = P.b.darts, dbl = leg.out === "double";
@@ -1460,19 +1537,48 @@ function legsWithin(p, offset = 0) {
 }
 /** What each picked dart was aimed at. Doubles: from the score you were on. Scoring: from where it landed
  *  (12 to 18 round the top means the 20, 16 to 17 round the bottom means the 19), otherwise the dart before or after. */
+/** What each picked dart was aimed at, as a target bed (n) and, where it can tell, an exact target (seg, e.g. T19, S16, D20).
+ *  Your own choice wins. Otherwise: doubles from the score you were on; scoring from where it landed (14 round to 10 = the 20,
+ *  11 round to 15 = the 19, the 18 only after a 20 and a 19); and on 170 or less, from your routes and the standard ones. */
+const aimLabel = a => a === "B" ? "Bull" : a === "25" ? "25" : a;
+const aimSeg = (a, r, x, left, out) => a === "B" ? "DB" : a === "25" ? "SB" : /^[SDT]/.test(a) ? a : segInBed(+a, r, x, left, out);
+function routeAim(x, r, left, out) {
+  let best = null, bp = 0;
+  for (const [a, w] of aimMix(r, left, out)) { const q = w * (aimDist(a).get(x) || 0); if (q > bp) { bp = q; best = a; } }
+  return best;
+}
+function segInBed(n, r, x, left, out) {   // single, treble or double of a number you said you were aiming at
+  if (r > 170) return "T" + n;
+  const mix = new Map(aimMix(r, left, out).filter(([a]) => segNum(a) === n));
+  let best = "S" + n, bp = -1;
+  for (const k of ["T", "S", "D"]) { const a = k + n, prior = mix.get(a) ?? (k === "D" ? (finishTarget(r) === a ? 1 : .05) : .5), q = prior * ((aimDist(a).get(x) || 0) + 1e-4); if (q > bp) { bp = q; best = a; } }
+  return best;
+}
 function inferAims(v, out) {
   let r = v.r;
   const res = v.d.map((x, k) => {
-    const ft = out === "double" ? finishTarget(r) : null, t = ft && dartAt(v, k, ft, x) ? ft : null, o = { r, dbl: t, n: null };
-    if (t) o.n = t === "DB" ? 25 : +t.slice(1);
+    const ft = out === "double" ? finishTarget(r) : null, t = ft && dartAt(v, k, ft, x) ? ft : null, o = { r, dbl: t, n: null, seg: null, man: false };
+    const ma = v.aim && v.aim[k];
+    if (ma) { o.man = true; o.seg = aimSeg(ma, r, x, 3 - k, out); o.n = segNum(o.seg); if (t && o.seg !== t) o.dbl = null; }
+    else if (t) { o.n = t === "DB" ? 25 : +t.slice(1); o.seg = t; }
     else if (r > 170) { const n = segNum(x); if (G20.has(n)) o.n = 20; else if (G19.has(n)) o.n = 19; }
+    else { const a = x === "M" ? (aimMix(r, 3 - k, out)[0] || [])[0] : routeAim(x, r, 3 - k, out); if (a) { o.seg = a; o.n = segNum(a); } }
     r -= VAL[x]; return o;
   });
-  for (let k = 1; k < res.length; k++) if (res[k].n == null && res[k].r > 170) res[k].n = res[k - 1].n;
-  for (let k = res.length - 2; k >= 0; k--) if (res[k].n == null && res[k].r > 170) res[k].n = res[k + 1].n;
+  for (let k = 1; k < res.length; k++) if (res[k].n == null && res[k].r > 170 && !res[k].man) res[k].n = res[k - 1].n;
+  for (let k = res.length - 2; k >= 0; k--) if (res[k].n == null && res[k].r > 170 && !res[k].man) res[k].n = res[k + 1].n;
   // the 18: only once you've already gone 20 then 19 this visit, a dart round the 1-18-4-13 is read as at the 18
-  if (res.length === 3 && res[2].r > 170 && !res[2].dbl && res[0].n === 20 && res[1].n === 19 && G18.has(segNum(v.d[2]))) res[2].n = 18;
+  if (res.length === 3 && res[2].r > 170 && !res[2].dbl && !res[2].man && res[0].n === 20 && res[1].n === 19 && G18.has(segNum(v.d[2]))) res[2].n = 18;
+  res.forEach(o => { if (!o.seg && o.n && o.r > 170) o.seg = o.n === 25 ? "DB" : "T" + o.n; });
   return res;
+}
+/** Where a dart that landed on x from r was most likely aimed, as shares per number (for showing both readings when it's close). */
+function dartPost(x, r, left, out) {
+  if (r > 170 || x === "M") return null;
+  const m = new Map();
+  for (const [a, w] of aimMix(r, left, out)) { const q = w * (aimDist(a).get(x) || 0); if (q > 0) { const b = segNum(a), e = m.get(b) || { q: 0, a: null, aq: 0 }; e.q += q; if (q > e.aq) { e.aq = q; e.a = a; } m.set(b, e); } }
+  const z = sum([...m.values()].map(e => e.q)); if (!z) return null;
+  return [...m.entries()].map(([b, e]) => ({ b, a: e.a, p: e.q / z })).sort((p, q) => q.p - p.p);
 }
 function compute(legs) {
   const st = { legs: legs.length, done: 0, visits: 0, darts: 0, points: 0, f9p: 0, f9d: 0, scores: [], busts: 0, s60: 0, s100: 0, s140: 0, s180: 0,
@@ -1480,7 +1586,7 @@ function compute(legs) {
     legDarts: [], outsVals: [], dbl: new Map(), byVisit: [], sessions: new Map(), byLegNo: [], byHour: [0, 1, 2, 3].map(() => ({ p: 0, d: 0 })),
     picked: 0, heat: { all: new Map(), scoring: new Map(), at20: new Map(), at19: new Map(), at18: new Map(), finishing: new Map(), dbl: new Map() }, leftOn: new Map(),
     sw: { vis: 0, withSw: 0, swP: 0, swN: 0, noP: 0, noN: 0, types: new Map(), trig: new Map(), after: { n: 0, p: 0, t: 0 }, stay: { n: 0, p: 0, t: 0 } },
-    byDart: [0, 1, 2].map(() => ({ n: 0, p: 0, t: 0, t20: 0, b20: 0 })), after: { t: { n: 0, h: 0 }, o: { n: 0, h: 0 } }, dblPos: [0, 1, 2].map(() => ({ att: 0, hit: 0 })), dblAim: new Map(), phase: { to: [], from: [], vis: [], sp: 0, sd: 0, fp: 0, fd: 0 }, seq: [], legSeq: [], heatDblT: new Map(), first: new Map(), firstAll: { n: 0, tot: 0 } };
+    byDart: [0, 1, 2].map(() => ({ n: 0, p: 0, t: 0, t20: 0, b20: 0 })), after: { t: { n: 0, h: 0 }, o: { n: 0, h: 0 } }, dblPos: [0, 1, 2].map(() => ({ att: 0, hit: 0 })), dblAim: new Map(), phase: { to: [], from: [], vis: [], sp: 0, sd: 0, fp: 0, fd: 0, list: [] }, seq: [], legSeq: [], heatDblT: new Map(), first: new Map(), firstAll: { n: 0, tot: 0 }, heatT: new Map(), tgt: new Map() };
   const inc = (m, k) => m.set(k, (m.get(k) || 0) + 1);
   for (const l of legs) {
     let lp = 0, ld = 0;
@@ -1519,6 +1625,7 @@ function compute(legs) {
         v.d.forEach((x, k) => {
           const a = aims[k], key = x === "M" ? (a.n && a.n !== 25 ? "O" + a.n : null) : x;
           if (key) { inc(st.heat.all, key); if (r > 170) { inc(st.heat.scoring, key); if (a.n === 20) inc(st.heat.at20, key); if (a.n === 19) inc(st.heat.at19, key); if (a.n === 18) inc(st.heat.at18, key); } else inc(st.heat.finishing, key); }
+          if (a.seg && key) { const hm = st.heatT.get(a.seg) || new Map(); inc(hm, key); st.heatT.set(a.seg, hm); const e = st.tgt.get(a.seg) || { n: 0, hit: 0, bed: 0 }; e.n++; if (x === a.seg) e.hit++; if (x !== "M" && segNum(x) === a.n) e.bed++; st.tgt.set(a.seg, e); }
           if (a.dbl && key) { inc(st.heat.dbl, key); const hm = st.heatDblT.get(a.dbl) || new Map(); inc(hm, key); st.heatDblT.set(a.dbl, hm); }
           if (k === 0 && key && r > 170 && !v.b) { const e = st.first.get(key) || { n: 0, tot: 0, sc: new Map() }; e.n++; e.tot += v.s; inc(e.sc, v.s); st.first.set(key, e); st.firstAll.n++; st.firstAll.tot += v.s; }
           if (r > 170 && k < 3) {
@@ -1530,9 +1637,9 @@ function compute(legs) {
       }
     });
     { // phases of the leg: getting down to a finish, then finishing
-      let r = l.st, dTo = 0, dFrom = 0, vis = 0;
-      l.v.forEach(v => { const d = dartsOf(v), sc = scored(v); if (r > 170) { dTo += d; st.phase.sp += sc; st.phase.sd += d; } else { dFrom += d; vis++; st.phase.fp += sc; st.phase.fd += d; } r -= sc; st.seq.push(v); });
-      if (l.done) { st.phase.to.push(dTo); st.phase.from.push(dFrom); st.phase.vis.push(vis); st.legSeq.push(ld); }
+      let r = l.st, dTo = 0, dFrom = 0, vis = 0, r0 = null;
+      l.v.forEach(v => { const d = dartsOf(v), sc = scored(v); if (r > 170) { dTo += d; st.phase.sp += sc; st.phase.sd += d; } else { if (r0 == null) r0 = r; dFrom += d; vis++; st.phase.fp += sc; st.phase.fd += d; } r -= sc; st.seq.push(v); });
+      if (l.done) { st.phase.to.push(dTo); st.phase.from.push(dFrom); st.phase.vis.push(vis); st.legSeq.push(ld); if (r0 != null) st.phase.list.push({ r0, d: dFrom }); }
     }
     (st.byLegNo[Math.min((l.n || 1) - 1, 7)] ||= { p: 0, d: 0 }); const bl = st.byLegNo[Math.min((l.n || 1) - 1, 7)]; bl.p += lp; bl.d += ld;
     if (l.done) { st.done++; st.legDarts.push(ld); st.outsVals.push(l.v[l.v.length - 1].s); }
@@ -1698,6 +1805,18 @@ function statsScoring(st) {
     <div class="card"><p class="h2" style="margin-bottom:4px">Most common scores</p>${top.map(([s, k]) => brow(String(s), fmtN(k), pct(k, n), k / top[0][1] * 100)).join("")}</div>
     ${bandsCard(st)}`;
 }
+function fromCard(st) {
+  const L = st.phase.list; if (!L.length) return "";
+  const ds = L.map(x => x.d), within = n => pct(ds.filter(d => d <= n).length, ds.length), med = ds.slice().sort((a, b) => a - b)[Math.floor(ds.length / 2)];
+  const g = (l, v) => `<div><span class="l">${l}</span><span class="v">${v}</span></div>`;
+  const bands = [[101, 170], [61, 100], [41, 60], [2, 40]].map(([a, b]) => { const xs = L.filter(x => x.r0 >= a && x.r0 <= b).map(x => x.d); return { l: `${a}–${b}`, n: xs.length, m: mean(xs) }; }).filter(b => b.n);
+  const mx = Math.max(...bands.map(b => b.m), 1);
+  const bins = [["1–3", 1, 3], ["4–6", 4, 6], ["7–9", 7, 9], ["10–12", 10, 12], ["13–15", 13, 15], ["16+", 16, 999]].map(([l, a, z]) => ({ l, v: ds.filter(d => d >= a && d <= z).length })); bins.forEach(b => b.t = b.v || "");
+  return `<div class="card"><p class="h2">Once you're on 170 or less</p><p class="sub" style="margin-bottom:8px">Darts from your first visit on a finish to checking out, in legs you won (${L.length})</p>
+    <div class="grid3">${g("Average darts", f1(mean(ds)))}${g("Typical", med + " darts")}${g("First finish", Math.round(mean(L.map(x => x.r0))) + " left")}${g("Within 3 darts", within(3))}${g("Within 6", within(6))}${g("Within 9", within(9))}</div>
+    <p class="s13 muted" style="margin:12px 0 4px">By where you got to</p>${bands.map(b => brow(b.l, b.n + " legs", f1(b.m), b.m / mx * 100)).join("")}
+    <p class="s13 muted" style="margin:12px 0 0">How many darts it took</p><div style="margin-top:6px">${barChart(bins, { label: "Darts to check out from a finish" })}</div></div>`;
+}
 function leftOnCard(st) {
   if (!st.leftOn.size) return "";
   const all = [...Array(20)].map((_, i) => "D" + (i + 1)).concat("DB").map(t => [t, st.leftOn.get(t) || { n: 0, outs: 0 }]);
@@ -1723,6 +1842,7 @@ function statsFinishing(st) {
       ${tile("Darts per leg", st.dpl == null ? "–" : f1(st.dpl), finished ? `${finished} legs finished` : "")}
       ${(() => { const q = [...st.dbl.entries()].filter(([, e]) => e.att >= 5).map(([t, e]) => [t, e, e.hit / e.att]).sort((a, b) => b[2] - a[2]);
         return q.length >= 2 ? tile("Best double", segLabel(q[0][0]), `${pct(q[0][1].hit, q[0][1].att)} of ${q[0][1].att} darts`, "", "good") + tile("Worst double", segLabel(q[q.length - 1][0]), `${pct(q[q.length - 1][1].hit, q[q.length - 1][1].att)} of ${q[q.length - 1][1].att} darts`, "", "bad") : ""; })()}</div>
+    ${fromCard(st)}
     ${rangesCard(st)}
     ${leftOnCard(st)}
     <div class="card"><p class="h2">Doubles</p><p class="sub" style="margin-bottom:6px">From visits where you picked the darts</p>
@@ -1741,7 +1861,7 @@ function byDartTable(rows, cols) {
 function segCard(st, seg, m, tot, f) {
   const k = m.get(seg) || 0, fd = st.first.get(seg), A = st.firstAll, g = (l, v) => `<div><span class="l">${l}</span><span class="v">${v}</span></div>`;
   let h = `<div class="card"><div class="between"><p class="h2">${segName(seg)}</p><button class="chip" data-act="seg-clear">Clear</button></div><p class="sub">${fmtN(k)} darts here, ${pct(k, tot)} of the darts shown</p>`;
-  if (["scoring", "at20", "at19", "at18"].includes(f)) {
+  if (["scoring", "tgt"].includes(f)) {
     if (fd && fd.n) {
       const av = fd.tot / fd.n, base = A.n ? A.tot / A.n : null, top = [...fd.sc.entries()].sort((a, b) => b[1] - a[1] || b[0] - a[0]).slice(0, 6), d = base == null ? null : av - base;
       h += `<p class="s13" style="margin:12px 0 6px;font-weight:600">When your first dart lands here</p><div class="grid3">${g("Visits", fmtN(fd.n))}${g("Average visit", f1(av))}${g("Against any start", d == null ? "–" : `<span class="fm ${d >= 0 ? "up" : "down"}">${d >= 0 ? "+" : "−"}${f1(Math.abs(d))}</span>`)}</div>
@@ -1767,9 +1887,11 @@ function numberCard(m, n, tot) {
 }
 function statsAccuracy(st) {
   if (!st.picked) return `<div class="card empty">Accuracy builds from the darts you pick after each visit. Pick the darts on a few visits and this fills in.</div>`;
-  const F = [["scoring", "Scoring"], ["at20", "At 20"], ["at19", "At 19"], ["at18", "At 18"], ["dbl", "At a double"], ["finishing", "170 and below"], ["all", "All"]];
-  const f = S.stats.heat || "scoring", dT = f === "dbl" && S.stats.dblT && st.heatDblT.has(S.stats.dblT) ? S.stats.dblT : null;
-  const m = dT ? st.heatDblT.get(dT) : st.heat[f], tot = sum([...m.values()]);
+  const F = [["scoring", "Scoring"], ["tgt", "By target"], ["dbl", "At a double"], ["finishing", "170 and below"], ["all", "All"]];
+  const f = F.some(x => x[0] === S.stats.heat) ? S.stats.heat : "scoring", dT = f === "dbl" && S.stats.dblT && st.heatDblT.has(S.stats.dblT) ? S.stats.dblT : null;
+  const tgts = [...st.heatT.entries()].map(([t, hm]) => [t, sum([...hm.values()])]).sort((a, b) => b[1] - a[1]);
+  const tT = f === "tgt" ? (S.stats.tgt && st.heatT.has(S.stats.tgt) ? S.stats.tgt : (tgts[0] || [])[0]) : null;
+  const m = dT ? st.heatDblT.get(dT) : tT ? st.heatT.get(tT) : (st.heat[f] || new Map()), tot = sum([...m.values()]);
   const ring = S.stats.ring || "all", seg = S.stats.seg || null;
   const dbls = [...st.heatDblT.entries()].map(([t, hm]) => [t, sum([...hm.values()])]).sort((a, b) => b[1] - a[1]);
   const top = [...m.entries()].filter(([x]) => inRing(x, ring)).sort((a, b) => b[1] - a[1]).slice(0, 8);
@@ -1777,13 +1899,16 @@ function statsAccuracy(st) {
   const D = st.byDart, A = st.after;
   return `<div class="card stack" style="gap:10px"><p class="h2">Where your darts land</p>
       <div class="seg">${F.map(([k, l]) => `<button class="${k === f ? "on" : ""}" data-heat="${k}">${l}</button>`).join("")}</div>
+      ${f === "tgt" && tgts.length ? `<div class="chips">${tgts.slice(0, 9).map(([t, k]) => `<button class="chip${t === tT ? " on" : ""}" data-tgt="${t}">${/^S\d/.test(t) ? t : segLabel(t)} <span style="opacity:.6">${k}</span></button>`).join("")}${tgts.length > 9 ? `<select data-tgtsel aria-label="More targets" style="width:auto;padding:7px 10px"><option value="">More…</option>${tgts.slice(9).map(([t, k]) => `<option value="${t}"${t === tT ? " selected" : ""}>${segName(t)} (${k})</option>`).join("")}</select>` : ""}</div>` : ""}
       ${f === "dbl" && dbls.length ? `<div class="chips"><button class="chip${dT ? "" : " on"}" data-dblt="">All doubles</button>${dbls.slice(0, 12).map(([t, k]) => `<button class="chip${t === dT ? " on" : ""}" data-dblt="${t}">${segLabel(t)} <span style="opacity:.6">${k}</span></button>`).join("")}</div>` : ""}
-      <p class="sub" style="margin:0">${dT ? `Darts at ${segLabel(dT)}` : desc} · ${fmtN(tot)} darts. The dotted ring is misses off the board.</p>
+      <p class="sub" style="margin:0">${dT ? `Darts at ${segLabel(dT)}` : tT ? `Darts aimed at ${segName(tT)}: the aim you picked, or worked out from where it landed and your routes` : desc} · ${fmtN(tot)} darts. The dotted ring is misses off the board.</p>
       <div class="chips">${[["all", "All rings"], ["T", "Trebles"], ["D", "Doubles"], ["S", "Singles"], ["bull", "Bull"], ["O", "Outside"]].map(([k, l]) => `<button class="chip${k === ring ? " on" : ""}" data-ring="${k}">${l}</button>`).join("")}</div>
       ${tot ? boardHeat(m, ring, seg) : `<p class="empty">No darts here yet.</p>`}
-      <p class="sub" style="margin:0;text-align:center">${["scoring", "at20", "at19", "at18"].includes(f) ? "Tap a bed to see what your visit usually comes to when the first dart lands there." : "Tap a bed to see it on its own."}</p></div>
+      <p class="sub" style="margin:0;text-align:center">${["scoring", "tgt"].includes(f) ? "Tap a bed to see what your visit usually comes to when the first dart lands there." : "Tap a bed to see it on its own."}</p></div>
     ${tot && seg ? segCard(st, seg, m, tot, f) : ""}
     ${tot && top.length ? `<div class="card"><p class="h2" style="margin-bottom:4px">Most hit${ring === "all" ? "" : ` · ${{ T: "trebles", D: "doubles", S: "singles", bull: "bull", O: "outside" }[ring]}`}</p>${top.map(([x, k]) => `<div class="brow"><span class="lab">${segName(x)}</span><div class="bar warm"><i style="width:${k / top[0][1] * 100}%"></i></div><span class="n">${fmtN(k)}</span><span class="p">${pct(k, tot)}</span></div>`).join("")}</div>` : ""}
+    ${(() => { const tl = [...st.tgt.entries()].filter(([, e]) => e.n >= 10).sort((a, b) => b[1].n - a[1].n).slice(0, 14); return tl.length ? `<div class="card"><p class="h2">Hit rate by target</p><p class="sub" style="margin-bottom:6px">Targets you've aimed at 10 or more times</p>
+      <table class="tbl"><tr><th>Target</th><th>Darts</th><th>Hit</th><th>In the bed</th></tr>${tl.map(([t, e]) => `<tr><td><b>${segName(t)}</b></td><td class="muted">${fmtN(e.n)}</td><td><b>${pct(e.hit, e.n)}</b></td><td>${pct(e.bed, e.n)}</td></tr>`).join("")}</table></div>` : ""; })()}
     ${D[0].n ? `<div class="card"><p class="h2">By dart in the visit</p><p class="sub" style="margin-bottom:6px">Scoring darts only (more than 170 left)</p>
       ${byDartTable([["Points per dart", c => f2(c.p / c.n)], ["Treble 20", c => pct(c.t20, c.n)], ["Any treble", c => pct(c.t, c.n)], ["20 bed (S, T or D20)", c => pct(c.b20, c.n)], ["Darts", c => fmtN(c.n)]], D)}
       ${A.t.n >= 5 && A.o.n >= 5 ? `<p class="sub" style="margin-top:8px">After a T20, your next dart hits T20 ${pct(A.t.h, A.t.n)} of the time (${A.t.h} of ${A.t.n}), against ${pct(A.o.h, A.o.n)} after any other dart.</p>` : ""}</div>` : ""}`;
@@ -2087,6 +2212,7 @@ function openLeg(id) {
   openSheet(`<div class="stack" style="gap:14px"><div><span class="s13 muted">${fmtDate(l.at)} · ${fmtTime(l.at)}</span><p class="sheet-title">Leg ${l.n} · ${l.st}${l.m ? ` · vs CPU ${l.m.lvl}` : ""}</p></div>
     <div class="trio card"><div><span class="l">Average</span><span class="v">${l.v.length ? f1(avgOf([l])) : "–"}</span></div><div><span class="l">Darts</span><span class="v">${legDarts(l)}</span></div><div><span class="l">Result</span><span class="v">${l.done ? "Won" : l.m && l.m.res === "lost" ? "Lost" : "Unfinished"}</span></div></div>
     ${rows ? `<div class="card" style="padding:2px 14px">${rows}</div>` : ""}
+    ${l.m ? `<button class="btn ghost" data-act="m-report" data-id="${l.m.id}">Match report</button>` : `<button class="btn ghost" data-act="s-report" data-id="${l.sid}">Session summary</button>`}
     <div class="row">${!l.done && !l.end && l.id !== S.meta.active ? `<button class="btn ghost grow" data-act="resume" data-id="${l.id}">Resume leg</button>` : ""}<button class="btn ghost danger grow" data-act="del-leg" data-id="${l.id}">Delete leg</button></div></div>`);
 }
 
@@ -2222,6 +2348,7 @@ document.addEventListener("click", e => {
   if (d.heat) { S.stats.heat = d.heat; render(); return; }
   if (d.ring) { S.stats.ring = d.ring; render(); return; }
   if (d.dbl) { S.stats.dbl = d.dbl; render(); return; }
+  if (d.tgt) { S.stats.tgt = d.tgt; S.stats.seg = null; render(); return; }
   if (d.dblt != null) { S.stats.dblT = d.dblt || null; S.stats.seg = null; render(); return; }
   if (d.dexf) { S.dexf = d.dexf; render(); return; }
   if (d.bull != null) { bullThrow(+d.bull); return; }
@@ -2231,8 +2358,9 @@ document.addEventListener("click", e => {
   if (d.popt != null && P) { chooseCombo(+d.popt); return; }
   if (d.pord != null && P) { tapOrder(+d.pord); return; }
   if (d.bmult && P) { P.b.mult = d.bmult; drawPicker(); return; }
-  if ((d.bnum || d.bseg) && P) { if (P.b.darts.length >= 3 || P.auto || P.mis) return; const x = d.bseg || ((d.bnum && P.b.mult) + d.bnum); P.b.darts.push(x); P.b.mult = "S"; sfx("click"); buildCheck(); return; }
-  if (d.bslot != null && P) { P.b.darts = P.b.darts.slice(0, +d.bslot); P.mis = null; P.auto = false; drawPicker(); return; }
+  if ((d.bnum || d.bseg) && P) { if (P.b.darts.length >= 3 || P.auto || P.mis) return; const x = d.bseg || ((d.bnum && P.b.mult) + d.bnum); P.b.darts.push(x); P.b.aims.push(P.aim || null); P.b.mult = "S"; sfx("click"); buildCheck(); return; }
+  if (d.bslot != null && P) { P.b.darts = P.b.darts.slice(0, +d.bslot); P.b.aims = P.b.aims.slice(0, +d.bslot); P.mis = null; P.auto = false; drawPicker(); return; }
+  if (d.paim != null && P && P.kind === "pick") { P.aim = d.paim || null; P.aimSet = true; drawPicker(); return; }
   if (d.dsel != null && P) { const k = +d.dsel; P.sel[k] = !P.sel[k]; drawQuestions(); return; }
   if (d.q && P) { P[d.q] = +d.qv; if (d.q === "du" && P.dd != null && P.dd > P.du) P.dd = null; drawQuestions(); return; }
   const a = d.act; if (!a) return;
@@ -2240,6 +2368,8 @@ document.addEventListener("click", e => {
   if (a === "start" || a === "next-leg") { closeSheet(); startLeg(); }
   else if (a === "end-session") endSession();
   else if (a === "toggle-visits") { S.showAll = !S.showAll; render(); }
+  else if (a === "m-report") { const ml = matchLegs(d.id); S.sheet = { kind: "report" }; openSheet(`<div class="stack" style="gap:14px"><div><span class="s13 muted">${fmtDate(ml[0].at)} · first to ${ml[0].m.first}</span><p class="sheet-title">Match report</p></div>${matchReport(d.id)}<button class="btn primary" data-act="close">Done</button></div>`); }
+  else if (a === "s-report") { const ls = liveLegs().filter(l => l.sid === d.id && l.v.length); S.sheet = { kind: "report" }; openSheet(`<div class="stack" style="gap:14px"><div><span class="s13 muted">${fmtDate(ls[0].at)}</span><p class="sheet-title">Session summary</p></div>${sessionReport(ls)}<button class="btn primary" data-act="close">Done</button></div>`); }
   else if (a === "seg-clear") { S.stats.seg = null; render(); }
   else if (a === "wrap-list") openWrapList();
   else if (a === "bull-again") { S.sheet.step = "me"; drawBull(); }
@@ -2261,12 +2391,13 @@ document.addEventListener("click", e => {
   else if (a === "abandon") { S.meta.active = null; saveMeta(); closeSheet(); render(); toast("Leg stopped. It stays in your history."); }
   else if (a === "discard") { const l = activeLeg(); if (l) { l.del = true; persist([l]); if (l.m && M()) S.meta.match = null; } S.meta.active = null; saveMeta(); closeSheet(); render(); toast("Leg discarded"); }
   else if (a === "close") closeSheet();
-  else if (a === "p-build") { P.step = "build"; P.b = { mult: "S", darts: [] }; drawPicker(); }
+  else if (a === "p-build") { P.step = "build"; P.b = { mult: "S", darts: [], aims: [] }; drawPicker(); }
   else if (a === "b-back" || a === "p-back") { P.step = "list"; drawPicker(); }
   else if (a === "p-reset") { P.used = []; P.order = []; P.auto = false; drawPicker(); }
-  else if (a === "b-clear") { P.b.darts = []; P.mis = null; P.auto = false; drawPicker(); }
-  else if (a === "mis-use") { const v = P.v, e = P.mis; v.s = e.s; v.d = e.d; v.f = e.f || undefined; v.b = e.b || undefined; if (!v.f) delete v.du; P.mis = null; askOrSave(leg, v, true); }
-  else if (a === "mis-fix") { P.b.darts.pop(); P.mis = null; drawPicker(); }
+  else if (a === "b-clear") { P.b.darts = []; P.b.aims = []; P.mis = null; P.auto = false; drawPicker(); }
+  else if (a === "aim-more") { P.aimMore = !P.aimMore; drawPicker(); }
+  else if (a === "mis-use") { const v = P.v, e = P.mis; v.s = e.s; v.d = e.d; setAims(v, P.b.aims.slice(0, e.d.length)); v.f = e.f || undefined; v.b = e.b || undefined; if (!v.f) delete v.du; P.mis = null; askOrSave(leg, v, true); }
+  else if (a === "mis-fix") { P.b.darts.pop(); P.b.aims.pop(); P.mis = null; drawPicker(); }
   else if (a === "p-skip") askOrSave(leg, P.v, false);
   else if (a === "q-save") {
     const v = P.v;
@@ -2292,6 +2423,7 @@ document.addEventListener("click", e => {
   else if (a === "gh-off") { ghSave(null); gh.state = "off"; render(); toast("GitHub sync turned off on this device"); }
 });
 document.addEventListener("change", e => {
+  if (e.target.matches("[data-tgtsel]") && e.target.value) { S.stats.tgt = e.target.value; S.stats.seg = null; render(); }
   if (e.target.matches("[data-period]")) { S.stats.period = S.set.period = e.target.value; saveSettings(); render(); }
   if (e.target.id === "importFile" && e.target.files[0]) { importJSON(e.target.files[0]); e.target.value = ""; }
 });
