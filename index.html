@@ -161,6 +161,8 @@ label.f{display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--mu
 .pl .big{font-size:52px;font-weight:700;line-height:1;letter-spacing:-.03em}
 .pl .route{justify-content:flex-start;padding:0;min-height:28px}
 .pl .route span{font-size:13px;padding:3px 6px}
+.pavg{display:grid;grid-template-columns:1fr 1fr;gap:6px;border-top:1px solid var(--line);padding-top:8px;margin-top:4px}
+.pavg .l{display:block;font-size:11.5px;color:var(--muted)}.pavg .v{font-family:var(--disp);font-size:21px;font-weight:700;letter-spacing:-.01em}
 .pl .cd{font-size:13px;color:var(--muted);min-height:28px;display:flex;align-items:center}
 .score{font-size:40px;font-weight:700;text-align:center;letter-spacing:-.02em}
 @media (min-width:680px){
@@ -467,8 +469,9 @@ const FLOOR = 0.0012;
 
 /* checkout routes */
 const DBL_PREF = { D20: 0, D16: .4, D8: .8, D10: .9, D18: 1.1, D12: 1.2, D4: 1.4, D6: 1.6, D14: 1.7, D2: 2, DB: 2.4 };
+const LOWT = x => x[0] === "T" && +x.slice(1) <= 6;   // there's never a reason to aim at T6 or below
 function setupCost(s) {
-  if (s === "M") return 99;
+  if (s === "M" || LOWT(s)) return 99;
   if (s[0] === "T") { const n = +s.slice(1); return n === 20 ? 0 : n === 19 ? .2 : n === 18 ? .4 : n === 17 ? .5 : n >= 15 ? .6 : 1; }
   if (s === "SB") return 1.6; if (s === "DB") return 2.2;
   if (s[0] === "S") return s === "S20" ? .3 : .5;
@@ -527,7 +530,7 @@ function personalAim(r) {
         else if (bn === 25) res = r === 50 ? "DB" : "SB";
         else {
           const cost = x => { const l = r - VAL[x], ft = finishTarget(l); return ft ? (DBL_PREF[ft] ?? 3) + (x[0] === "D" ? 1 : 0) : l <= 170 && route(l, 2) ? 4 + (x[0] === "S" ? .5 : 0) : 8 + l / 100; };
-          const opts = ["T" + bn, "S" + bn, "D" + bn].filter(x => r - VAL[x] >= 2);
+          const opts = ["T" + bn, "S" + bn, "D" + bn].filter(x => r - VAL[x] >= 2 && !LOWT(x));
           res = opts.length ? opts.sort((a, b) => cost(a) - cost(b))[0] : "S" + bn;
         }
       }
@@ -567,8 +570,10 @@ function validSeq(seq, rem, finishing, out) {
 }
 /** The likely targets for a dart from a score, weighted: your habit there first, then the sensible routes or set-ups. */
 const ALTS = new Map();
+const FIRSTS = new Map();
 function firsts(rem, left, out) {   // best first darts of a finish, or of a set-up shot, with a cost each
-  const best = new Map(), segs = ALL.filter(x => x !== "M"), finals = out === "double" ? segs.filter(isDbl) : segs;
+  const fk = rem + "|" + left + "|" + out; if (FIRSTS.has(fk)) return FIRSTS.get(fk);
+  const best = new Map(), segs = ALL.filter(x => x !== "M" && !LOWT(x)), finals = out === "double" ? segs.filter(isDbl) : segs;
   for (let n = 1; n <= left && !best.size; n++) {
     const rec = (pre, r) => {
       if (pre.length === n - 1) { for (const f of finals) if (VAL[f] === r) { const c = (out === "double" ? (DBL_PREF[f] ?? 3) : 0) + sum(pre.map(setupCost)), k = (pre[0] || f); if (!best.has(k) || c < best.get(k)) best.set(k, c); } return; }
@@ -576,8 +581,8 @@ function firsts(rem, left, out) {   // best first darts of a finish, or of a set
     };
     if (rem <= left * 60) rec([], rem);
   }
-  if ((!best.size || Math.min(...best.values()) >= 2) && out === "double" && rem <= 100) for (const x of ALL) { /* set-ups too, when the only way out is awkward, like the bull on 50 */ if (x === "M" || x[0] === "D") continue; const t = finishTarget(rem - VAL[x]); if (t && !best.has(x)) best.set(x, (DBL_PREF[t] ?? 3) + (x[0] === "T" ? .4 : 0) + (x === "SB" ? 1 : 0)); }
-  return [...best.entries()].sort((a, b) => a[1] - b[1]).slice(0, 3);
+  if ((!best.size || Math.min(...best.values()) >= 2) && out === "double" && rem <= 100) for (const x of ALL) { /* set-ups too, when the only way out is awkward, like the bull on 50 */ if (x === "M" || x[0] === "D" || LOWT(x)) continue; const t = finishTarget(rem - VAL[x]); if (t && !best.has(x)) best.set(x, (DBL_PREF[t] ?? 3) + (x[0] === "T" ? .4 : 0) + (x === "SB" ? 1 : 0)); }
+  const res = [...best.entries()].sort((a, b) => a[1] - b[1]).slice(0, 3); FIRSTS.set(fk, res); return res;
 }
 function aimMix(rem, left, out, aim = "T20") {
   const key = rem + "|" + left + "|" + out + "|" + aim; if (ALTS.has(key)) return ALTS.get(key);
@@ -682,8 +687,8 @@ function pickHistory() {
       const ma = v.aim && v.aim[k];
       if ((x !== "M" || ma) && r != null) {
         const n = ma ? (ma === "B" || ma === "25" ? 25 : segNum(/^[SDT]/.test(ma) ? ma : "S" + ma)) : segNum(x);
-        if (r <= 170) { const m = aimAt.get(r) || new Map(); m.set(n, (m.get(n) || 0) + 1); aimAt.set(r, m); }
-        else if (G20.has(n)) scoreGrp[20]++; else if (G19.has(n)) scoreGrp[19]++;
+        if (r <= 170 && (ma || x === finishTarget(r) || firsts(r, 3 - k, l.out).some(([a]) => a === x))) { const m = aimAt.get(r) || new Map(); m.set(n, (m.get(n) || 0) + 1); aimAt.set(r, m); }
+        else if (r > 170 && G20.has(n)) scoreGrp[20]++; else if (r > 170 && G19.has(n)) scoreGrp[19]++;
       }
       r -= VAL[x];
     });
@@ -865,15 +870,16 @@ function routeChips(rem, out) {
   const rt = rem <= (out === "straight" ? 180 : 170) ? route(rem, 3, out) : null;
   return rt ? rt.map(x => `<span>${segLabel(x)}</span>`).join("") : rem <= 170 && out === "double" ? `<span class="nf" style="color:var(--muted);background:var(--bg)">No finish</span>` : "";
 }
+const pavg = (leg, match) => `<div class="pavg"><div><span class="l">Leg avg</span><span class="v">${leg == null ? "–" : f1(leg)}</span></div><div><span class="l">Match avg</span><span class="v">${match == null ? "–" : f1(match)}</span></div></div>`;
 function scoreboard(leg, m) {
   const cv = leg.m.cpuV, last = cv[cv.length - 1], sh = S.cpuShow, cr = cpuRem(leg);
   const shown = sh ? Math.max(0, sh.rem - sum(sh.d.map(x => VAL[x]))) : cr;
   const ml = matchLegs(m.id), ca = cpuAvg(ml), ma = avgOf(ml);
   return `<div class="vs">
     <div class="pl me${m.turn === "me" ? " on" : ""}"><div class="between"><span class="h2">You</span><span class="s13 muted">legs ${m.me}</span></div>
-      <span class="big" data-ckey="r-${leg.id}" data-to="${legRem(leg)}">${legRem(leg)}</span><div class="route">${routeChips(legRem(leg), leg.out)}</div><span class="small muted">avg ${ma == null ? "–" : f1(ma)}</span></div>
+      <span class="big" data-ckey="r-${leg.id}" data-to="${legRem(leg)}">${legRem(leg)}</span><div class="route">${routeChips(legRem(leg), leg.out)}</div>${pavg(leg.v.length ? avgOf([leg]) : null, ma)}</div>
     <div class="pl cpu${m.turn === "cpu" ? " on" : ""}"><div class="between"><span class="h2">CPU ${m.lvl}</span><span class="s13 muted">legs ${m.cpu}</span></div>
-      <span class="big" data-ckey="c-${leg.id}" data-to="${shown}">${shown}</span><div class="cd">${sh ? sh.d.map(segLabel).join(" · ") + (sh.d.length < 3 ? " …" : "") : last ? `${last.b ? "Bust" : last.s}: ${last.d.map(segLabel).join(" · ")}` : leg.m.starter === "cpu" ? "throws first" : "waiting"}</div><span class="small muted">avg ${ca == null ? "–" : f1(ca)}</span></div>
+      <span class="big" data-ckey="c-${leg.id}" data-to="${shown}">${shown}</span><div class="cd">${sh ? sh.d.map(segLabel).join(" · ") + (sh.d.length < 3 ? " …" : "") : last ? `${last.b ? "Bust" : last.s}: ${last.d.map(segLabel).join(" · ")}` : leg.m.starter === "cpu" ? "throws first" : "waiting"}</div>${pavg(cv.length ? cpuAvg([leg]) : null, ca)}</div>
   </div>`;
 }
 /** The other half of the screen when the Fold is open: your record from this score, this session, and the CPU's visits. */
@@ -1085,8 +1091,8 @@ function cpuTurn() {
     const after = v.b ? v.r : v.r - v.s;
     if (pop) cpuPopTotal(v, after);
     if (v.f) sfx("checkout"); else if (v.b) sfx("bust"); else sfx(v.s === 180 ? "max" : v.s >= 140 ? "ton40" : v.s >= 100 ? "ton" : "cpu");
-    say(v.f ? "Game shot" : v.b ? "No score" : v.s === 180 ? "One hundred and eighty!" : numWords(v.s));
-    setTimeout(finish, fast ? 220 : pop ? (v.f || v.s >= 100 ? 1300 : 1000) : 300);
+    say(v.f ? "Game shot" : v.b || !v.s ? "No score" : v.s === 180 ? "One hundred and eighty!" : numWords(v.s));
+    setTimeout(finish, fast ? 220 : pop ? (v.f || v.s >= 100 ? 3400 : 3000) : 300);
   };
   const finish = () => {
     cpuPopClose(); S.cpuSkip = null;
@@ -1096,6 +1102,7 @@ function cpuTurn() {
     const r = legRem(leg); if (r <= 170 && canFinish(r, leg.out)) say(`You require ${numWords(r)}`);
   };
   if (S.tab === "play") render();
+  if (cr <= 170 && canFinish(cr, leg.out)) say(`Opponent requires ${numWords(cr)}`);
   setTimeout(step, 450);
 }
 function cpuPopOpen(m, v) {
@@ -1155,7 +1162,7 @@ function bullThrow(i) {
 }
 /** The CPU's side of a match, worked out from its darts. */
 function cpuStats(legs) {
-  const B = BT(), o = { p: 0, d: 0, f9p: 0, f9d: 0, sp: 0, sd: 0, s60: 0, s100: 0, s140: 0, s180: 0, hi: 0, busts: 0, att: 0, outs: 0, best: null, hiOut: null, from: [] };
+  const B = BT(), o = { p: 0, d: 0, f9p: 0, f9d: 0, sp: 0, sd: 0, s60: 0, s100: 0, s140: 0, s180: 0, hi: 0, busts: 0, att: 0, outs: 0, best: null, hiOut: null, from: [], sdn: 0, t20: 0, b20: 0 };
   legs.forEach(l => {
     let r = l.st, ld = 0, df = null;
     (l.m.cpuV || []).forEach((v, i) => {
@@ -1163,13 +1170,32 @@ function cpuStats(legs) {
       o.p += sc; o.d += dn; ld += dn; if (i < 3) { o.f9p += sc; o.f9d += dn; }
       if (r > 170) { o.sp += sc; o.sd += dn; } else df = (df || 0) + dn;
       if (v.b) o.busts++; else { if (v.s >= B[0]) o.s60++; if (v.s >= B[1]) o.s100++; if (v.s >= B[2]) o.s140++; if (v.s >= B[3]) o.s180++; o.hi = Math.max(o.hi, v.s); }
-      let rr = v.r; for (const x of v.d) { if (finishTarget(rr)) o.att++; rr -= VAL[x]; if (rr <= 1) break; }
+      let rr = v.r; for (const x of v.d) { if (rr > 170) { o.sdn++; if (x === "T20") o.t20++; if (segNum(x) === 20 && x !== "M") o.b20++; } if (finishTarget(rr)) o.att++; rr -= VAL[x]; if (rr <= 1) break; }
       if (v.f) { o.outs++; o.hiOut = Math.max(o.hiOut || 0, v.s); }
       r -= sc;
     });
     if (l.m.res === "lost") { o.best = o.best == null ? ld : Math.min(o.best, ld); if (df != null) o.from.push(df); }
   });
   return { ...o, avg: o.d ? o.p / o.d * 3 : null, f9: o.f9d ? o.f9p / o.f9d * 3 : null, sca: o.sd ? o.sp / o.sd * 3 : null, co: o.att ? o.outs / o.att * 100 : null, fromM: mean(o.from) };
+}
+/** The rest of the match report: where your darts went, at the 20 and 19, each double, big singles. */
+function matchExtra(st) {
+  if (!st.picked) return `<p class="sub" style="text-align:center">Pick the darts after each visit for where your darts went, doubles and more.</p>`;
+  const card = (t, sub, body) => body ? `<div class="card"><p class="h2">${t}</p>${sub ? `<p class="sub" style="margin-bottom:6px">${sub}</p>` : ""}${body}</div>` : "";
+  const g = (m, k) => m.get(k) || 0;
+  const top = [...st.heat.all.entries()].filter(([k]) => k[0] !== "O").sort((a, b) => b[1] - a[1]).slice(0, 8), tot = sum([...st.heat.all.values()]);
+  const atN = (n, l, r) => { const m = st.heat["at" + n], t = sum([...m.values()]); if (t < 6) return "";
+    const bed = x => g(m, "S" + x) + g(m, "T" + x) + g(m, "D" + x), rows = [["Treble " + n, g(m, "T" + n)], ["Single " + n, g(m, "S" + n)], ["Double " + n, g(m, "D" + n)], [`The ${l} side`, bed(l)], [`The ${r} side`, bed(r)]];
+    rows.push(["Elsewhere", t - sum(rows.map(x => x[1]))]);
+    return card(`At the ${n}`, `${fmtN(t)} scoring darts`, rows.map(([lab, k]) => brow(lab, fmtN(k), pct(k, t), k / t * 100)).join("")); };
+  const dbl = [...st.dbl.entries()].sort((a, b) => b[1].att - a[1].att);
+  const tl = [...st.tgt.entries()].filter(([t, e]) => e.n >= 3 && !/^D\d/.test(t)).sort((a, b) => b[1].n - a[1].n).slice(0, 8);
+  const R = st.ranges.filter(x => x.att), b = st.bigS;
+  return `${card("Most hit", `${fmtN(tot)} darts picked`, top.map(([k, n]) => brow(segName(k), fmtN(n), pct(n, tot), n / top[0][1] * 100)).join(""))}
+    ${atN(20, 5, 1)}${atN(19, 7, 3)}
+    ${card("Hit rate by target", "Targets aimed at 3 or more times", tl.length ? `<table class="tbl"><tr><th>Target</th><th>Darts</th><th>Hit</th><th>In the bed</th></tr>${tl.map(([t, e]) => `<tr><td><b>${segName(t)}</b></td><td class="muted">${e.n}</td><td><b>${pct(e.hit, e.n)}</b></td><td>${pct(e.bed, e.n)}</td></tr>`).join("")}</table>` : "")}
+    ${card("Doubles", "Every double you threw at", dbl.length ? `<table class="tbl"><tr><th>Double</th><th>Darts</th><th>Hit</th><th>Rate</th></tr>${dbl.map(([t, e]) => `<tr><td><b>${segLabel(t)}</b></td><td class="muted">${e.att}</td><td class="muted">${e.hit}</td><td><b>${pct(e.hit, e.att)}</b></td></tr>`).join("")}</table>` : "")}
+    ${card("Finishing", "", (b.n ? brow("Big singles", `${b.hit}/${b.n}`, pct(b.hit, b.n), b.hit / b.n * 100) : "") + R.map(x => brow(`Out from ${x.a}–${x.b}`, `${x.hit}/${x.att}`, pct(x.hit, x.att), x.hit / x.att * 100)).join(""))}`;
 }
 function matchReport(mid) {
   const ml = matchLegs(mid).sort((a, b) => a.at - b.at); if (!ml.length) return "";
@@ -1178,9 +1204,12 @@ function matchReport(mid) {
   const rows = [["Average", me.avg, cp.avg, 1, f1], ["Scoring average", me.sca, cp.sca, 1, f1], ["First 9", me.f9, cp.f9, 1, f1], [BL(0), me.s60, cp.s60, 1], [BL(1), me.s100, cp.s100, 1], [BL(2), me.s140, cp.s140, 1],
     ["Highest score", myHi || null, cp.hi || null, 1], ["Checkout", me.dd ? me.outs / me.dd * 100 : null, cp.co, 1, v => f1(v) + "%"], ["Darts at a double", me.dd, cp.att, 0], ["Highest checkout", me.highOut, cp.hiOut, 1],
     ["Best leg", me.best, cp.best, -1, v => v + " darts"], ["Darts from 170", mean(me.phase.from), cp.fromM, -1, f1], ["Busts", me.busts, cp.busts, -1]];
+  const D = me.byDart, sdn = sum(D.map(c => c.n));
+  if (sdn) rows.splice(6, 0, ["Treble 20 (scoring)", sum(D.map(c => c.t20)) / sdn * 100, cp.sdn ? cp.t20 / cp.sdn * 100 : null, 1, v => f1(v) + "%"], ["20 bed (scoring)", sum(D.map(c => c.b20)) / sdn * 100, cp.sdn ? cp.b20 / cp.sdn * 100 : null, 1, v => f1(v) + "%"]);
   const cell = (v, o, dir, fmt) => { const w = dir && v != null && o != null && v !== o && (v - o) * dir > 0; return `<td class="${w ? "win" : ""}">${v == null ? "–" : (fmt || String)(v)}</td>`; };
   return `<div class="card"><table class="tbl rep"><tr><th></th><th>You</th><th>CPU ${lvl}</th></tr><tr><td class="muted">Legs</td>${cell(won, lost, 1)}${cell(lost, won, 1)}</tr>
       ${rows.map(([l, a, b, dir, fmt]) => `<tr><td class="muted">${l}</td>${cell(a, b, dir, fmt)}${cell(b, a, dir, fmt)}</tr>`).join("")}</table></div>
+    ${matchExtra(me)}
     <div class="card"><p class="h2" style="margin-bottom:6px">Leg by leg</p><table class="tbl"><tr><th>Leg</th><th>Won by</th><th>Darts</th><th>You</th><th>CPU</th></tr>
       ${ml.map((l, i) => { const w = l.m.res === "won", dn = w ? legDarts(l) : sum((l.m.cpuV || []).map(v => v.f ? v.d.length : 3)); return `<tr><td>${i + 1}</td><td><b style="color:${w ? "var(--acc)" : l.m.res ? "var(--warm-dark)" : "var(--muted)"}">${w ? "You" : l.m.res ? "CPU" : "–"}</b></td><td class="muted">${l.m.res ? dn : "–"}</td><td><b>${l.v.length ? f1(avgOf([l])) : "–"}</b></td><td>${(l.m.cpuV || []).length ? f1(cpuAvg([l])) : "–"}</td></tr>`; }).join("")}</table></div>`;
 }
@@ -1423,7 +1452,7 @@ function chooseCombo(i) {
 }
 function tapOrder(i) {
   const P = S.sheet; if (!P || P.used.includes(i) || P.auto) return;
-  const take = j => { P.used.push(j); P.order.push({ x: P.combo[j].x, a: P.aimSet ? P.aim : P.combo[j].a }); };   // an aim picked now applies from this dart on
+  const take = j0 => { const j = P.combo.findIndex((c, q) => !P.used.includes(q) && c.x === P.combo[j0].x); P.used.push(j); P.order.push({ x: P.combo[j].x, a: P.aimSet ? P.aim : P.combo[j].a }); };   // an aim picked now applies from this dart on
   take(i); sfx("click");
   const rest = P.combo.map((_, j) => j).filter(j => !P.used.includes(j));
   if (rest.length && new Set(rest.map(j => P.combo[j].x)).size === 1) rest.forEach(take);
@@ -1590,7 +1619,10 @@ function segInBed(n, r, x, left, out) {   // single, treble or double of a numbe
   if (r > 170) return "T" + n;
   const mix = new Map(aimMix(r, left, out).filter(([a]) => segNum(a) === n));
   let best = "S" + n, bp = -1;
-  for (const k of ["T", "S", "D"]) { const a = k + n, prior = mix.get(a) ?? (k === "D" ? (finishTarget(r) === a ? 1 : .05) : .5), q = prior * ((aimDist(a).get(x) || 0) + 1e-4); if (q > bp) { bp = q; best = a; } }
+  for (const k of ["T", "S", "D"]) { const a = k + n, left2 = r - VAL[a];
+    if (k !== "S" && (LOWT(a) || left2 < 0 || left2 === 1 || (left2 === 0 && k !== "D" && out === "double"))) continue;
+    const leaves = left2 >= 2 && (out !== "double" || !!finishTarget(left2));   // leaves a double: the usual reason to go for it
+    const prior = (k === "D" ? (finishTarget(r) === a ? 1.5 : .05) : leaves ? 1 : k === "S" ? .3 : .15) + 2 * (mix.get(a) || 0), q = prior * ((aimDist(a).get(x) || 0) + 1e-4); if (q > bp) { bp = q; best = a; } }
   return best;
 }
 function inferAims(v, out) {
@@ -1598,7 +1630,7 @@ function inferAims(v, out) {
   const res = v.d.map((x, k) => {
     const ft = out === "double" ? finishTarget(r) : null, t = ft && dartAt(v, k, ft, x) ? ft : null, o = { r, dbl: t, n: null, seg: null, man: false };
     const ma = v.aim && v.aim[k];
-    if (ma) { o.man = true; o.seg = aimSeg(ma, r, x, 3 - k, out); o.n = segNum(o.seg); if (t && o.seg !== t) o.dbl = null; }
+    if (ma) { o.man = true; o.seg = aimSeg(ma, r, x, 3 - k, out); o.n = segNum(o.seg); if (t && o.seg !== t) { if (v.dda) { o.seg = t; o.n = segNum(t); } else o.dbl = null; } }
     else if (t) { o.n = t === "DB" ? 25 : +t.slice(1); o.seg = t; }
     else if (r > 170) { const n = segNum(x); if (G20.has(n)) o.n = 20; else if (G19.has(n)) o.n = 19; }
     else { const a = x === "M" ? (aimMix(r, 3 - k, out)[0] || [])[0] : routeAim(x, r, 3 - k, out) || (x !== "M" ? x : null); if (a) { o.seg = a; o.n = segNum(a); } }   // nothing on your routes explains it: take it as hitting what you aimed at
@@ -1626,7 +1658,7 @@ function compute(legs) {
     legDarts: [], outsVals: [], dbl: new Map(), byVisit: [], sessions: new Map(), byLegNo: [], byHour: [0, 1, 2, 3].map(() => ({ p: 0, d: 0 })),
     picked: 0, heat: { all: new Map(), scoring: new Map(), at20: new Map(), at19: new Map(), at18: new Map(), finishing: new Map(), dbl: new Map() }, leftOn: new Map(),
     sw: { vis: 0, withSw: 0, swP: 0, swN: 0, noP: 0, noN: 0, types: new Map(), trig: new Map(), after: { n: 0, p: 0, t: 0 }, stay: { n: 0, p: 0, t: 0 } },
-    byDart: [0, 1, 2].map(() => ({ n: 0, p: 0, t: 0, t20: 0, b20: 0 })), after: { t: { n: 0, h: 0 }, o: { n: 0, h: 0 } }, dblPos: [0, 1, 2].map(() => ({ att: 0, hit: 0 })), dblAim: new Map(), phase: { to: [], from: [], vis: [], sp: 0, sd: 0, fp: 0, fd: 0, list: [] }, seq: [], legSeq: [], heatDblT: new Map(), first: new Map(), firstAll: { n: 0, tot: 0 }, heatT: new Map(), tgt: new Map() };
+    byDart: [0, 1, 2].map(() => ({ n: 0, p: 0, t: 0, t20: 0, b20: 0 })), after: { t: { n: 0, h: 0 }, o: { n: 0, h: 0 } }, dblPos: [0, 1, 2].map(() => ({ att: 0, hit: 0 })), dblAim: new Map(), phase: { to: [], from: [], vis: [], sp: 0, sd: 0, fp: 0, fd: 0, list: [] }, seq: [], legSeq: [], heatDblT: new Map(), first: new Map(), firstAll: { n: 0, tot: 0 }, heatT: new Map(), tgt: new Map(), bigS: { n: 0, hit: 0, bed: 0 } };
   const inc = (m, k) => m.set(k, (m.get(k) || 0) + 1);
   for (const l of legs) {
     let lp = 0, ld = 0;
@@ -1666,6 +1698,7 @@ function compute(legs) {
           const a = aims[k], key = x === "M" ? (a.n && a.n !== 25 ? "O" + a.n : null) : x;
           if (key) { inc(st.heat.all, key); if (r > 170) { inc(st.heat.scoring, key); if (a.n === 20) inc(st.heat.at20, key); if (a.n === 19) inc(st.heat.at19, key); if (a.n === 18) inc(st.heat.at18, key); } else inc(st.heat.finishing, key); }
           if (a.seg && key) { const hm = st.heatT.get(a.seg) || new Map(); inc(hm, key); st.heatT.set(a.seg, hm); const e = st.tgt.get(a.seg) || { n: 0, hit: 0, bed: 0 }; e.n++; if (x === a.seg) e.hit++; if (x !== "M" && segNum(x) === a.n) e.bed++; st.tgt.set(a.seg, e); }
+          if (r <= 170 && !a.dbl && a.seg && /^S(1[1-9]|20)$/.test(a.seg)) { st.bigS.n++; if (x === a.seg) st.bigS.hit++; if (x !== "M" && segNum(x) === a.n) st.bigS.bed++; }   // needing a big single to set up a finish
           if (a.dbl && key) { inc(st.heat.dbl, key); const hm = st.heatDblT.get(a.dbl) || new Map(); inc(hm, key); st.heatDblT.set(a.dbl, hm); }
           if (k === 0 && key && r > 170 && !v.b) { const e = st.first.get(key) || { n: 0, tot: 0, sc: new Map() }; e.n++; e.tot += v.s; inc(e.sc, v.s); st.first.set(key, e); st.firstAll.n++; st.firstAll.tot += v.s; }
           if (r > 170 && k < 3) {
@@ -1867,6 +1900,12 @@ function leftOnCard(st) {
     <div class="two"><div><p class="s13 muted" style="margin:4px 0">Most</p>${most.map(row).join("")}</div><div><p class="s13 muted" style="margin:4px 0">Least</p>${least.map(row).join("")}</div></div></div>`;
 }
 const DBL_ORDER = t => t === "DB" ? 99 : 21 - +t.slice(1);
+/** Needing a big single (11 to 20) to leave a double: how often the exact single goes in. */
+function bigSCard(st) {
+  const b = st.bigS; if (b.n < 3) return "";
+  return `<div class="card"><p class="h2">Big singles</p><p class="sub" style="margin-bottom:6px">Darts at a single 11 to 20 on 170 or less, like S20 on 60 or S16 on 56</p>
+    ${brow("Hit the single", fmtN(b.hit), pct(b.hit, b.n), b.hit / b.n * 100)}${brow("In the right bed", fmtN(b.bed), pct(b.bed, b.n), b.bed / b.n * 100)}<p class="sub" style="margin-top:6px">${fmtN(b.n)} darts. "In the right bed" includes the treble and double of that number.</p></div>`;
+}
 function statsFinishing(st) {
   const finished = st.legDarts.length;
   const dblAll = [...st.dbl.entries()].sort((a, b) => b[1].att - a[1].att);
@@ -1885,6 +1924,7 @@ function statsFinishing(st) {
         return q.length >= 2 ? tile("Best double", segLabel(q[0][0]), `${pct(q[0][1].hit, q[0][1].att)} of ${q[0][1].att} darts`, "", "good") + tile("Worst double", segLabel(q[q.length - 1][0]), `${pct(q[q.length - 1][1].hit, q[q.length - 1][1].att)} of ${q[q.length - 1][1].att} darts`, "", "bad") : ""; })()}</div>
     ${fromCard(st)}
     ${rangesCard(st)}
+    ${bigSCard(st)}
     ${leftOnCard(st)}
     <div class="card"><p class="h2">Doubles</p><p class="sub" style="margin-bottom:6px">From visits where you picked the darts</p>
       ${dbl.length ? `<table class="tbl"><tr><th>Double</th><th>Darts</th><th>Hit</th><th>Rate</th></tr>${dbl.map(([t, e]) => `<tr><td><b>${t === "Others" ? "Others" : segLabel(t)}</b></td><td class="muted">${e.att}</td><td class="muted">${e.hit}</td><td><b>${pct(e.hit, e.att)}</b></td></tr>`).join("")}</table>` : `<p class="empty" style="padding:12px">No darts at a double picked yet.</p>`}</div>
