@@ -528,8 +528,12 @@ function personalAim(r) {
   else {
     const m = H.aimAt.get(r);
     if (m) {
-      let tot = 0, bn = 0, bc = 0; for (const [n, c] of m) { tot += c; if (c > bc) { bc = c; bn = n; } }
-      if (tot >= 2 && bc / tot >= .5) {
+      let tot = 0, bn = 0, bc = 0; const byN = new Map();
+      for (const [k, c] of m) { tot += c; const nn = typeof k === "number" ? k : k === "DB" || k === "SB" ? 25 : segNum(k); byN.set(nn, (byN.get(nn) || 0) + c); }
+      for (const [nn, c] of byN) if (c > bc) { bc = c; bn = nn; }
+      const exact = [...m.entries()].filter(([k]) => typeof k === "string").sort((a, b) => b[1] - a[1])[0];
+      if (exact && exact[1] >= 2 && exact[1] / tot >= .5 && !LOWT(exact[0]) && (r - VAL[exact[0]] >= 2 || (r === VAL[exact[0]] && isDbl(exact[0])))) res = exact[0];   // you've shown the exact bed
+      else if (tot >= 2 && bc / tot >= .5) {
         const t = finishTarget(r);
         if (t && (t === "DB" ? bn === 25 : bn === r / 2)) res = t;
         else if (bn === 25) res = r === 50 ? "DB" : "SB";
@@ -595,7 +599,13 @@ function aimMix(rem, left, out, aim = "T20") {
   let mix;
   if (rem > 170) mix = [[pa || aim, 1]];
   else {
-    const f = firsts(rem, left, out); let ws = f.length ? f.map(([a, c]) => [a, Math.exp(-2 * c)]) : [[aim, 1]];
+    /* on 170 or less you go for a big treble, unless a single, a smaller treble or the bull leaves a double (or it's the double itself) */
+    const ok = a => /^T(1[7-9]|20)$/.test(a) || (out === "double" ? (isDbl(a) && VAL[a] === rem) || !!finishTarget(rem - VAL[a]) : VAL[a] === rem || rem - VAL[a] >= 2);
+    const lowT = a => a[0] === "T" ? (+a.slice(1) >= 17 ? 0 : +a.slice(1) >= 13 ? .4 : 1) : 0;   // a smaller treble is a last resort
+    let f = firsts(rem, left, out).filter(([a]) => ok(a)).map(([a, c]) => [a, c + lowT(a)]);
+    const fin1 = f.some(([a]) => (isDbl(a) && VAL[a] === rem) || (out === "double" && finishTarget(rem - VAL[a]) && a[0] !== "T"));
+    if (!fin1 && rem > 60) for (const a of ["T20", "T19", "T18", "T17"]) if (rem - VAL[a] >= 2 && !f.some(x => x[0] === a)) f.push([a, (f.length ? Math.min(...f.map(x => x[1])) : 0) + (route(rem - VAL[a], Math.max(1, left - 1), out) ? .3 : 1) + (a === "T20" ? 0 : a === "T19" ? .15 : .3)]);   /* the big trebles are always in play while there's no single to leave a double */
+    let ws = f.length ? f.map(([a, c]) => [a, Math.exp(-2 * c)]) : [[aim, 1]];
     const z = sum(ws.map(w => w[1])); ws = ws.map(([a, w]) => [a, w / z]);
     mix = pa ? [[pa, .7], ...ws.map(([a, w]) => [a, w * .3])] : ws;
   }
@@ -692,7 +702,8 @@ function pickHistory() {
       const ma = v.aim && v.aim[k];
       if ((x !== "M" || ma) && r != null) {
         const n = ma ? (ma === "B" || ma === "25" ? 25 : segNum(/^[SDT]/.test(ma) ? ma : "S" + ma)) : segNum(x);
-        if (r <= 170 && (ma || x === finishTarget(r) || firsts(r, 3 - k, l.out).some(([a]) => a === x))) { const m = aimAt.get(r) || new Map(); m.set(n, (m.get(n) || 0) + 1); aimAt.set(r, m); }
+        const key = ma ? (/^[SDT]/.test(ma) ? ma : ma === "B" ? "DB" : ma === "25" ? "SB" : n) : x;   // an exact bed when we know it
+        if (r <= 170 && (ma || x === finishTarget(r) || firsts(r, 3 - k, l.out).some(([a]) => a === x))) { const m = aimAt.get(r) || new Map(); m.set(key, (m.get(key) || 0) + 1); aimAt.set(r, m); }
         else if (r > 170 && G20.has(n)) scoreGrp[20]++; else if (r > 170 && G19.has(n)) scoreGrp[19]++;
       }
       r -= VAL[x];
@@ -1367,7 +1378,7 @@ function askOrSave(leg, v, picked) {
 }
 function saveVisit(leg, v) {
   Object.keys(v).forEach(k => v[k] === undefined && delete v[k]);
-  if (v.aim) { const u = S.set.aimUse || (S.set.aimUse = {}); new Set(v.aim.filter(a => a && !/^[SDT]/.test(a))).forEach(a => u[a] = (u[a] || 0) + 1); saveSettings(); }
+  if (v.aim) { const u = S.set.aimUse || (S.set.aimUse = {}); new Set(v.aim.filter(Boolean).map(a => a.replace(/^[SDT]/, ""))).forEach(a => u[a] = (u[a] || 0) + 1); saveSettings(); }
   leg.v.push(v); S.animNew = true; feedback(leg, v);
   const m = leg.m && M() && M().id === leg.m.id ? M() : null;
   S.meta.sLast = Date.now();
@@ -1536,9 +1547,10 @@ function aimChips(P) {
   const use = S.set.aimUse || {}, base = ["20", "19", "B", "25", "18"], all = [...Array(20)].map((_, i) => String(20 - i)).concat(["B", "25"]);
   const rank = a => base.includes(a) ? base.indexOf(a) : 10 + all.indexOf(a);
   const vis = all.slice().sort((a, b) => (use[b] || 0) - (use[a] || 0) || rank(a) - rank(b)).slice(0, 5);
-  if (P.aim && !/^[SDT]/.test(P.aim) && !vis.includes(P.aim)) vis[4] = P.aim;
-  return `<div class="aimrow"><span class="small muted">Aim</span><button class="ac${!P.aim ? " on" : ""}" data-paim="">Auto</button>${vis.map(a => `<button class="ac${P.aim === a ? " on" : ""}" data-paim="${a}">${aimLabel(a)}</button>`).join("")}<button class="ac more" data-act="aim-more">${P.aimMore ? "Less" : "More"}</button></div>
-    ${P.aimMore ? `<div class="aimgrid">${all.map(a => `<button class="ac${P.aim === a ? " on" : ""}" data-paim="${a}">${aimLabel(a)}</button>`).join("")}</div>` : ""}`;
+  const curN = P.aim ? P.aim.replace(/^[SDT]/, "") : null, on = a => curN === a, lab = a => on(a) && /^[SDT]/.test(P.aim) ? P.aim : aimLabel(a);
+  if (curN && !vis.includes(curN)) vis[4] = curN;
+  return `<div class="aimrow"><span class="small muted">Aim</span><button class="ac${!P.aim ? " on" : ""}" data-paim="">Auto</button>${vis.map(a => `<button class="ac${on(a) ? " on" : ""}" data-paim="${a}">${lab(a)}</button>`).join("")}<button class="ac more" data-act="aim-more">${P.aimMore ? "Less" : "More"}</button></div>
+    ${P.aimMore ? `<div class="aimgrid">${all.map(a => `<button class="ac${on(a) ? " on" : ""}" data-paim="${a}">${lab(a)}</button>`).join("")}</div>` : ""}`;
 }
 /** What it reads each dart so far as aimed at (your pick if you made one), shown under the darts as you tap them. */
 function liveAims(r, darts, aims, out) {
@@ -1700,7 +1712,7 @@ function inferAims(v, out) {
     if (ma) { o.man = true; o.seg = aimSeg(ma, r, x, 3 - k, out); o.n = segNum(o.seg); if (t && o.seg !== t) { if (v.dda) { o.seg = t; o.n = segNum(t); } else o.dbl = null; } }
     else if (t) { o.n = t === "DB" ? 25 : +t.slice(1); o.seg = t; }
     else if (r > 170) { const n = segNum(x); if (G20.has(n)) o.n = 20; else if (G19.has(n)) o.n = 19; }
-    else { const a = x === "M" ? (aimMix(r, 3 - k, out)[0] || [])[0] : routeAim(x, r, 3 - k, out) || (x !== "M" ? x : null); if (a) { o.seg = a; o.n = segNum(a); } }   // nothing on your routes explains it: take it as hitting what you aimed at
+    else { const a = x === "M" ? (aimMix(r, 3 - k, out)[0] || [])[0] : routeAim(x, r, 3 - k, out) || (x === "M" ? null : r >= 62 && G20.has(segNum(x)) ? "T20" : r >= 59 && G19.has(segNum(x)) ? "T19" : x); if (a) { o.seg = a; o.n = segNum(a); } }   // nothing on your routes explains it: take it as hitting what you aimed at
     r -= VAL[x]; return o;
   });
   for (let k = 1; k < res.length; k++) if (res[k].n == null && res[k].r > 170 && !res[k].man) res[k].n = res[k - 1].n;
@@ -2538,7 +2550,11 @@ document.addEventListener("click", e => {
   if (d.bmult && P) { P.b.mult = d.bmult; drawPicker(); return; }
   if ((d.bnum || d.bseg) && P) { if (P.b.darts.length >= 3 || P.auto || P.mis) return; const x = d.bseg || ((d.bnum && P.b.mult) + d.bnum); P.b.darts.push(x); P.b.aims.push(P.aim || null); P.b.mult = "S"; sfx("click"); buildCheck(); return; }
   if (d.bslot != null && P) { P.b.darts = P.b.darts.slice(0, +d.bslot); P.b.aims = P.b.aims.slice(0, +d.bslot); P.mis = null; P.auto = false; drawPicker(); return; }
-  if (d.paim != null && P && P.kind === "pick") { P.aim = d.paim || null; P.aimSet = true; drawPicker(); return; }
+  if (d.paim != null && P && P.kind === "pick") {
+    const a = d.paim, cur = P.aim;
+    if (!a || a === "B" || a === "25") P.aim = a ? (cur === a ? null : a) : null;
+    else { const n = +a, cyc = (n <= 6 ? ["S", "D"] : ["T", "S", "D"]).map(k => k + n), i = cyc.indexOf(cur); P.aim = i < 0 ? cyc[0] : cyc[i + 1] || null; }   // treble, then single, then double, then off
+    P.aimSet = true; drawPicker(); return; }
   if (d.dsel != null && P) { const k = +d.dsel; P.sel[k] = !P.sel[k]; drawQuestions(); return; }
   if (d.q && P) { P[d.q] = +d.qv; if (d.q === "du" && P.dd != null && P.dd > P.du) P.dd = null; drawQuestions(); return; }
   const a = d.act; if (!a) return;
