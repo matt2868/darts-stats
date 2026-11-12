@@ -136,6 +136,7 @@ svg text{font-family:"DM Sans",system-ui,sans-serif}
 .slot.on{background:var(--acc-soft);border-color:var(--acc)}
 .slot.empty .v{color:var(--faint)}
 .numgrid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
+.numgrid button.bo{font-size:12.5px;line-height:1.1;color:var(--warm-dark)}
 .numgrid button{min-height:44px;border:1px solid var(--line);background:#fff;border-radius:10px;font-size:16px;font-weight:500}
 .chips{display:flex;gap:6px;flex-wrap:wrap}
 .chips .chip{min-width:46px;min-height:40px}
@@ -700,6 +701,7 @@ function pickHistory() {
     let r = v.r;
     v.d.forEach((x, k) => {
       const ma = v.aim && v.aim[k];
+      if (ma === "X" || (v.bo && v.bo[k])) { r -= VAL[x]; return; }
       if ((x !== "M" || ma) && r != null) {
         const n = ma ? (ma === "B" || ma === "25" ? 25 : segNum(/^[SDT]/.test(ma) ? ma : "S" + ma)) : segNum(x);
         const key = ma ? (/^[SDT]/.test(ma) ? ma : ma === "B" ? "DB" : ma === "25" ? "SB" : n) : x;   // an exact bed when we know it
@@ -762,7 +764,7 @@ const dartAt = (v, k, t, x) => v.dda ? !!v.dda[k] : atDouble(t, x);
 function doubleInfo(v, out) {
   if (v.d && v.d.length && out === "double") {
     let r = v.r, att = 0; const per = [];
-    for (let k = 0; k < v.d.length; k++) { const s = v.d[k]; const t = finishTarget(r); if (t && dartAt(v, k, t, s)) { att++; per.push({ t, hit: s === t, k, x: s }); } r -= VAL[s]; if (r <= 1 && r !== 0) break; if (r === 0) break; }
+    for (let k = 0; k < v.d.length; k++) { const s = v.d[k]; const t = finishTarget(r); if (t && !(v.aim && v.aim[k] === "X") && dartAt(v, k, t, s)) { att++; per.push({ t, hit: s === t, k, x: s }); } r -= VAL[s]; if (r <= 1 && r !== 0) break; if (r === 0) break; }
     return { att, per };
   }
   return { att: v.dd || 0, per: null };
@@ -852,7 +854,8 @@ function viewPlay() {
 function dartsLine(v, out) {   // darts at a double get a box round them
   if (!v.d) return "";
   const at = new Set((doubleInfo(v, out).per || []).map(p => p.k));
-  return v.d.map((x, k) => at.has(k) ? `<span class="atd">${segLabel(x)}</span>` : segLabel(x)).join(" · ");
+  const lab = k => v.bo && v.bo[k] ? "Bounce out" : v.aim && v.aim[k] === "X" ? segLabel(v.d[k]) + " (bust)" : segLabel(v.d[k]);
+  return v.d.map((x, k) => at.has(k) ? `<span class="atd">${lab(k)}</span>` : lab(k)).join(" · ");
 }
 function visitsCard(leg, m) {
   const all = S.showAll, dl = v => v.b && !v.d ? "Bust" : dartsLine(v, leg.out);
@@ -1271,6 +1274,7 @@ function matchExtra(st) {
   const R = st.ranges.filter(x => x.att), b = st.bigS;
   return `${card("Most hit", `${fmtN(tot)} darts picked`, top.map(([k, n]) => brow(segName(k), fmtN(n), pct(n, tot), n / top[0][1] * 100)).join(""))}
     ${atN(20, 5, 1)}${atN(19, 7, 3)}
+    ${primDblCard(st)}${bounceCard(st)}
     ${card("Hit rate by target", "Targets aimed at 3 or more times", tl.length ? `<table class="tbl"><tr><th>Target</th><th>Darts</th><th>Hit</th><th>In the bed</th></tr>${tl.map(([t, e]) => `<tr><td><b>${segName(t)}</b></td><td class="muted">${e.n}</td><td><b>${pct(e.hit, e.n)}</b></td><td>${pct(e.bed, e.n)}</td></tr>`).join("")}</table>` : "")}
     ${card("Doubles", "Every double you threw at", dbl.length ? `<table class="tbl"><tr><th>Double</th><th>Darts</th><th>Hit</th><th>Rate</th></tr>${dbl.map(([t, e]) => `<tr><td><b>${segLabel(t)}</b></td><td class="muted">${e.att}</td><td class="muted">${e.hit}</td><td><b>${pct(e.hit, e.att)}</b></td></tr>`).join("")}</table>` : "")}
     ${card("Finishing", "", (b.n ? brow("Big singles", `${b.hit}/${b.n}`, pct(b.hit, b.n), b.hit / b.n * 100) : "") + R.map(x => brow(`Out from ${x.a}–${x.b}`, `${x.hit}/${x.att}`, pct(x.hit, x.att), x.hit / x.att * 100)).join(""))}`;
@@ -1359,7 +1363,7 @@ function dblQuestion(leg, v) {
   if (leg.out !== "double") return null;
   if (v.d && v.d.length) {
     let r = v.r, clear = true; const at = [];
-    v.d.forEach((x, k) => { const t = finishTarget(r); if (t) { at.push(k); if (!(x === "M" || x === t || x === insideOf(t))) clear = false; } r -= VAL[x]; });
+    v.d.forEach((x, k) => { const t = v.aim && v.aim[k] === "X" ? null : finishTarget(r); if (t) { at.push(k); if (!(x === "M" || x === t || x === insideOf(t))) clear = false; } r -= VAL[x]; });
     if (!at.length) { v.dd = 0; return null; }
     if (clear) { v.dda = v.d.map((_, k) => at.includes(k)); v.dd = at.length; return null; }
     return { kind: "darts", at };
@@ -1378,7 +1382,7 @@ function askOrSave(leg, v, picked) {
 }
 function saveVisit(leg, v) {
   Object.keys(v).forEach(k => v[k] === undefined && delete v[k]);
-  if (v.aim) { const u = S.set.aimUse || (S.set.aimUse = {}); new Set(v.aim.filter(Boolean).map(a => a.replace(/^[SDT]/, ""))).forEach(a => u[a] = (u[a] || 0) + 1); saveSettings(); }
+  if (v.aim) { const u = S.set.aimUse || (S.set.aimUse = {}); new Set(v.aim.filter(a => a && a !== "X").map(a => a.replace(/^[SDT]/, ""))).forEach(a => u[a] = (u[a] || 0) + 1); saveSettings(); }
   leg.v.push(v); S.animNew = true; feedback(leg, v);
   const m = leg.m && M() && M().id === leg.m.id ? M() : null;
   S.meta.sLast = Date.now();
@@ -1408,11 +1412,11 @@ function closeSheet() {
 }
 function openPicker(leg, draft) {
   const list = suggest(draft.s, draft.r, "T20", leg.out, !!draft.f).map(o => ({ ...o, items: draft.f ? o.items : o.items.slice().sort((a, b) => VAL[b.x] - VAL[a.x] || IDX[a.x] - IDX[b.x]) }));   // finishes show the double last
-  S.sheet = { kind: "pick", leg: leg.id, v: draft, list, step: list.length ? "list" : "build", b: { mult: "S", darts: [], aims: [] }, aim: null };
+  S.sheet = { kind: "pick", leg: leg.id, v: draft, list, step: list.length ? "list" : "build", b: { mult: "S", darts: [], aims: [], bo: [] }, aim: null };
   drawPicker();
 }
 function openBust(leg, draft) {
-  S.sheet = { kind: "pick", leg: leg.id, v: draft, list: [], step: "build", bust: true, b: { mult: "S", darts: [], aims: [] }, aim: null };
+  S.sheet = { kind: "pick", leg: leg.id, v: draft, list: [], step: "build", bust: true, b: { mult: "S", darts: [], aims: [], bo: [] }, aim: null };
   drawPicker();
 }
 /** Sound, voice, vibration and banners after one of your visits. */
@@ -1537,6 +1541,7 @@ function tapOrder(i) {
   drawPicker();
   if (P.order.length === P.combo.length) { P.auto = true; setTimeout(() => { if (S.sheet === P) { P.auto = false; finishOrder(); } }, 850); }
 }
+function setBo(v, bo) { const b = (bo || []).slice(0, v.d.length); if (b.some(Boolean)) v.bo = v.d.map((_, k) => !!b[k]); else delete v.bo; }   // which misses bounced out
 function setAims(v, aims) { if (aims && aims.some(Boolean)) v.aim = aims.map(a => a || null); else delete v.aim; }
 function finishOrder() {
   const P = S.sheet, leg = S.legs.get(P.leg), xs = P.order.map(o => o.x);
@@ -1546,19 +1551,19 @@ function finishOrder() {
 function aimChips(P) {
   const use = S.set.aimUse || {}, base = ["20", "19", "B", "25", "18"], all = [...Array(20)].map((_, i) => String(20 - i)).concat(["B", "25"]);
   const rank = a => base.includes(a) ? base.indexOf(a) : 10 + all.indexOf(a);
-  const vis = all.slice().sort((a, b) => (use[b] || 0) - (use[a] || 0) || rank(a) - rank(b)).slice(0, 5);
-  const curN = P.aim ? P.aim.replace(/^[SDT]/, "") : null, on = a => curN === a, lab = a => on(a) && /^[SDT]/.test(P.aim) ? P.aim : aimLabel(a);
-  if (curN && !vis.includes(curN)) vis[4] = curN;
-  return `<div class="aimrow"><span class="small muted">Aim</span><button class="ac${!P.aim ? " on" : ""}" data-paim="">Auto</button>${vis.map(a => `<button class="ac${on(a) ? " on" : ""}" data-paim="${a}">${lab(a)}</button>`).join("")}<button class="ac more" data-act="aim-more">${P.aimMore ? "Less" : "More"}</button></div>
+  const vis = all.slice().sort((a, b) => (use[b] || 0) - (use[a] || 0) || rank(a) - rank(b)).slice(0, 4);
+  const curN = P.aim && P.aim !== "X" ? P.aim.replace(/^[SDT]/, "") : null, on = a => curN === a, lab = a => on(a) && /^[SDT]/.test(P.aim) ? P.aim : aimLabel(a);
+  if (curN && !vis.includes(curN)) vis[3] = curN;
+  return `<div class="aimrow"><span class="small muted">Aim</span><button class="ac${!P.aim ? " on" : ""}" data-paim="">Auto</button>${vis.map(a => `<button class="ac${on(a) ? " on" : ""}" data-paim="${a}">${lab(a)}</button>`).join("")}<button class="ac more" data-act="aim-more">${P.aimMore ? "Less" : "More"}</button><button class="ac${P.aim === "X" ? " on" : ""}" data-paim="X" title="Throwing to bust on purpose">Bust</button></div>
     ${P.aimMore ? `<div class="aimgrid">${all.map(a => `<button class="ac${on(a) ? " on" : ""}" data-paim="${a}">${lab(a)}</button>`).join("")}</div>` : ""}`;
 }
 /** What it reads each dart so far as aimed at (your pick if you made one), shown under the darts as you tap them. */
 function liveAims(r, darts, aims, out) {
   if (!darts.length) return [];
   const v = { r, d: darts }; if (aims && aims.some(Boolean)) v.aim = darts.map((_, k) => aims[k] || null);
-  return inferAims(v, out).map(o => o.dbl || o.seg || null);
+  return inferAims(v, out).map(o => o.bust ? "X" : o.dbl || o.seg || null);
 }
-const captL = (a, man) => a ? `<small${man ? "" : ` class="au"`}>at ${a === "DB" ? "bull" : a === "SB" ? "25" : a}</small>` : "";
+const captL = (a, man) => a ? `<small${man ? "" : ` class="au"`}>${a === "X" ? "to bust" : `at ${a === "DB" ? "bull" : a === "SB" ? "25" : a}`}</small>` : "";
 const capt = a => a ? `<small>at ${a === "DB" ? "bull" : a === "SB" ? "25" : /^[SDT]/.test(a) ? a.slice(1) : aimLabel(a)}</small>` : "";
 const dchip = it => `<span>${segLabel(it.x)}${capt(it.a)}</span>`;
 function drawPicker() {
@@ -1572,9 +1577,9 @@ function drawPicker() {
     const note = P.bust ? (B.darts.length ? `Total ${tot}. The last dart should be the one that bust.` : "Tap the darts in the order you threw them, ending with the one that bust.")
       : B.darts.length ? `Total ${tot}${need > 0 ? ` · ${need} still to place` : need < 0 ? ` · ${-need} too many` : " ✓"}${v.f && leg.out === "double" ? ". The last dart must be a double." : ""}` : `Tap the darts in the order you threw them.${v.f && leg.out === "double" ? " The last dart must be a double." : ""}`;
     body = `
-    <div class="slots">${[0, 1, 2].map(i => `<button class="slot${B.darts[i] ? "" : " empty"}${i === B.darts.length ? " next" : ""}" data-bslot="${i}"><span class="l">Dart ${i + 1}</span><span class="v">${B.darts[i] ? segLabel(B.darts[i]) : "–"}</span>${B.darts[i] ? captL(la[i], !!B.aims[i]) : ""}</button>`).join("")}</div>
+    <div class="slots">${[0, 1, 2].map(i => `<button class="slot${B.darts[i] ? "" : " empty"}${i === B.darts.length ? " next" : ""}" data-bslot="${i}"><span class="l">Dart ${i + 1}</span><span class="v"${B.bo && B.bo[i] ? ` style="font-size:17px"` : ""}>${B.darts[i] ? (B.bo && B.bo[i] ? "Bounce out" : segLabel(B.darts[i])) : "–"}</span>${B.darts[i] ? captL(la[i], !!B.aims[i]) : ""}</button>`).join("")}</div>
     <div class="seg">${["S", "D", "T"].map(m => `<button class="${B.mult === m ? "on" : ""}" data-bmult="${m}">${m === "S" ? "Single" : m === "D" ? "Double" : "Treble"}</button>`).join("")}</div>
-    <div class="numgrid">${nums}<button data-bseg="SB">25</button><button data-bseg="DB">Bull</button><button data-bseg="M" style="grid-column:span 3">Miss</button></div>
+    <div class="numgrid">${nums}<button data-bseg="SB">25</button><button data-bseg="DB">Bull</button><button data-bseg="M" style="grid-column:span 2">Miss</button><button data-bseg="BO" class="bo">Bounce out</button></div>
     ${P.mis ? (() => { const e = P.mis, what = e.b ? `${e.s} and bust` : e.f ? `a ${e.s} checkout` : String(e.s);
       return `<div class="mis"><p class="h2" style="margin:0">Those darts make ${what}, not ${P.bust ? "a bust" : v.f ? `a ${v.s} checkout` : v.s}</p><p class="sub" style="margin:4px 0 10px">Change the visit to ${what}, or fix the darts?</p>
         <div class="row"><button class="btn ghost grow" data-act="mis-fix">Fix the darts</button><button class="btn primary grow" data-act="mis-use">Make it ${e.b ? "a bust" : e.s}</button></div></div>`; })()
@@ -1594,7 +1599,7 @@ function drawPicker() {
     <button class="btn ghost" data-act="p-skip">Skip darts</button>`;
   }
   openSheet(`<div class="stack" style="gap:14px"><div class="phead"><div><span class="s13 muted">${esc(head)}</span><p class="sheet-title">${esc(title)}</p></div>${aimChips(P)}</div>
-    ${P.aim ? `<p class="sub" style="margin:-6px 0 0">Aiming at ${aimLabel(P.aim)} ${P.step === "list" ? "for this visit" : "from the next dart you tap"}.</p>` : ""}${body}</div>`);
+    ${P.aim ? `<p class="sub" style="margin:-6px 0 0">${P.aim === "X" ? "Going for the bust" : `Aiming at ${aimLabel(P.aim)}`} ${P.step === "list" ? "for this visit" : "from the next dart you tap"}.</p>` : ""}${body}</div>`);
 }
 /** What a set of darts actually does from a score: its total, and whether it checks out or busts (darts after a bust are dropped). */
 function evalDarts(r0, darts, out) {
@@ -1614,7 +1619,7 @@ function buildCheck() {
   const match = P.bust ? !!ev.b : (ev.s === v.s && !!ev.f === !!v.f && !ev.b);
   if (!match) { P.mis = ev; drawPicker(); return; }
   P.auto = true; drawPicker();   // complete: save on its own after a beat
-  setTimeout(() => { if (S.sheet !== P) return; P.auto = false; v.d = ev.d; setAims(v, P.b.aims.slice(0, ev.d.length)); v.s = ev.s; if (ev.b) v.b = true; askOrSave(leg, v, true); }, 850);
+  setTimeout(() => { if (S.sheet !== P) return; P.auto = false; v.d = ev.d; setAims(v, P.b.aims.slice(0, ev.d.length)); setBo(v, P.b.bo); v.s = ev.s; if (ev.b) v.b = true; askOrSave(leg, v, true); }, 850);
 }
 function buildOk() {
   const P = S.sheet, v = P.v, leg = S.legs.get(P.leg), d = P.b.darts, dbl = leg.out === "double";
@@ -1687,7 +1692,7 @@ function legsWithin(p, offset = 0) {
 /** What each picked dart was aimed at, as a target bed (n) and, where it can tell, an exact target (seg, e.g. T19, S16, D20).
  *  Your own choice wins. Otherwise: doubles from the score you were on; scoring from where it landed (14 round to 10 = the 20,
  *  11 round to 15 = the 19, the 18 only after a 20 and a 19); and on 170 or less, from your routes and the standard ones. */
-const aimLabel = a => a === "B" ? "Bull" : a === "25" ? "25" : a;
+const aimLabel = a => a === "B" ? "Bull" : a === "25" ? "25" : a === "X" ? "Bust" : a;
 const aimSeg = (a, r, x, left, out) => a === "B" ? "DB" : a === "25" ? "SB" : /^[SDT]/.test(a) ? a : segInBed(+a, r, x, left, out);
 function routeAim(x, r, left, out) {
   let best = null, bp = 0;
@@ -1709,7 +1714,8 @@ function inferAims(v, out) {
   const res = v.d.map((x, k) => {
     const ft = out === "double" ? finishTarget(r) : null, t = ft && dartAt(v, k, ft, x) ? ft : null, o = { r, dbl: t, n: null, seg: null, man: false };
     const ma = v.aim && v.aim[k];
-    if (ma) { o.man = true; o.seg = aimSeg(ma, r, x, 3 - k, out); o.n = segNum(o.seg); if (t && o.seg !== t) { if (v.dda) { o.seg = t; o.n = segNum(t); } else o.dbl = null; } }
+    if (ma === "X") { o.man = true; o.bust = true; o.dbl = null; }   // going for the bust on purpose: no target, left out of accuracy
+    else if (ma) { o.man = true; o.seg = aimSeg(ma, r, x, 3 - k, out); o.n = segNum(o.seg); if (t && o.seg !== t) { if (v.dda) { o.seg = t; o.n = segNum(t); } else o.dbl = null; } }
     else if (t) { o.n = t === "DB" ? 25 : +t.slice(1); o.seg = t; }
     else if (r > 170) { const n = segNum(x); if (G20.has(n)) o.n = 20; else if (G19.has(n)) o.n = 19; }
     else { const a = x === "M" ? (aimMix(r, 3 - k, out)[0] || [])[0] : routeAim(x, r, 3 - k, out) || (x === "M" ? null : r >= 62 && G20.has(segNum(x)) ? "T20" : r >= 59 && G19.has(segNum(x)) ? "T19" : x); if (a) { o.seg = a; o.n = segNum(a); } }   // nothing on your routes explains it: take it as hitting what you aimed at
@@ -1737,7 +1743,7 @@ function compute(legs) {
     legDarts: [], outsVals: [], dbl: new Map(), byVisit: [], sessions: new Map(), byLegNo: [], byHour: [0, 1, 2, 3].map(() => ({ p: 0, d: 0 })),
     picked: 0, heat: { all: new Map(), scoring: new Map(), at20: new Map(), at19: new Map(), at18: new Map(), finishing: new Map(), dbl: new Map() }, leftOn: new Map(),
     sw: { vis: 0, withSw: 0, swP: 0, swN: 0, noP: 0, noN: 0, types: new Map(), trig: new Map(), after: { n: 0, p: 0, t: 0 }, stay: { n: 0, p: 0, t: 0 } },
-    byDart: [0, 1, 2].map(() => ({ n: 0, p: 0, t: 0, t20: 0, b20: 0 })), after: { t: { n: 0, h: 0 }, o: { n: 0, h: 0 } }, dblPos: [0, 1, 2].map(() => ({ att: 0, hit: 0 })), dblAim: new Map(), phase: { to: [], from: [], vis: [], sp: 0, sd: 0, fp: 0, fd: 0, list: [] }, seq: [], legSeq: [], heatDblT: new Map(), first: new Map(), firstAll: { n: 0, tot: 0 }, heatT: new Map(), tgt: new Map(), bigS: { n: 0, hit: 0, bed: 0, t: 0, d: 0 }, primDbl: new Map() };
+    byDart: [0, 1, 2].map(() => ({ n: 0, p: 0, t: 0, t20: 0, b20: 0 })), after: { t: { n: 0, h: 0 }, o: { n: 0, h: 0 } }, dblPos: [0, 1, 2].map(() => ({ att: 0, hit: 0 })), dblAim: new Map(), phase: { to: [], from: [], vis: [], sp: 0, sd: 0, fp: 0, fd: 0, list: [] }, seq: [], legSeq: [], heatDblT: new Map(), first: new Map(), firstAll: { n: 0, tot: 0 }, heatT: new Map(), tgt: new Map(), bigS: { n: 0, hit: 0, bed: 0, t: 0, d: 0 }, primDbl: new Map(), bounce: { n: 0, at: new Map(), dbl: 0, sc: 0 }, bustAim: 0, pd: 0 };
   const inc = (m, k) => m.set(k, (m.get(k) || 0) + 1);
   for (const l of legs) {
     let lp = 0, ld = 0;
@@ -1759,7 +1765,7 @@ function compute(legs) {
         }
       }
       if (v.d && v.d.length) {
-        st.picked++;
+        st.picked++; st.pd += v.d.length;
         let r = v.r, prev = null; const aims = inferAims(v, out);
         if (v.r > 170 && v.d.length === 3 && !v.b) {   // switching targets while scoring
           const W = st.sw; W.vis++; let did = false;
@@ -1774,6 +1780,8 @@ function compute(legs) {
           if (did) { W.withSw++; W.swP += v.s; W.swN++; } else { W.noP += v.s; W.noN++; }
         }
         v.d.forEach((x, k) => {
+          if (v.bo && v.bo[k]) { const B = st.bounce; B.n++; const t = aims[k].dbl || aims[k].seg; if (t) inc(B.at, t); if (aims[k].dbl) B.dbl++; if (r > 170) B.sc++; }
+          if (aims[k].bust || (v.bo && v.bo[k])) { st.bustAim += aims[k].bust ? 1 : 0; prev = null; r -= VAL[x]; return; }
           const a = aims[k], key = x === "M" ? (a.n && a.n !== 25 ? "O" + a.n : null) : x;
           if (key) { inc(st.heat.all, key); if (r > 170) { inc(st.heat.scoring, key); if (a.n === 20) inc(st.heat.at20, key); if (a.n === 19) inc(st.heat.at19, key); if (a.n === 18) inc(st.heat.at18, key); } else inc(st.heat.finishing, key); }
           if (a.seg && key) { { const hm = st.heatT.get(a.seg) || new Map(); inc(hm, key); st.heatT.set(a.seg, hm); }   /* doubles 1 to 20 are left out of By target when it's drawn; the bull stays in */ const e = st.tgt.get(a.seg) || { n: 0, hit: 0, bed: 0 }; e.n++; if (x === a.seg) e.hit++; if (x !== "M" && segNum(x) === a.n) e.bed++; st.tgt.set(a.seg, e); }
@@ -2063,6 +2071,14 @@ function numberCard(m, n, tot) {
     <p class="s13 muted" style="margin:10px 0 4px">Either side</p>
     ${[[l, bed(l)], [r, bed(r)]].map(([x, k]) => `<div class="brow"><span class="lab">${x} bed</span><div class="bar"><i style="width:${Math.max(here, 1) ? Math.min(100, k / Math.max(here, 1) * 100) : 0}%"></i></div><span class="n">${fmtN(k)}</span><span class="p">${pct(k, tot)}</span></div>`).join("")}</div>`;
 }
+function bounceCard(st) {
+  const B = st.bounce; if (!B.n) return "";
+  const at = [...B.at.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5);
+  return `<div class="card"><p class="h2">Bounce outs</p><p class="sub" style="margin-bottom:6px">Darts that hit the board and fell out. They're left out of the heat maps and hit rates.</p>
+    <div class="grid3">${[["Bounce outs", fmtN(B.n)], ["One every", fmtN(Math.round(st.pd / B.n)) + " darts"], ["At a double", B.dbl]].map(([l, v]) => `<div><span class="l">${l}</span><span class="v">${v}</span></div>`).join("")}</div>
+    ${at.length ? `<p class="s13 muted" style="margin:10px 0 4px">What you were going for</p>${at.map(([t, k]) => brow(segName(t), fmtN(k), pct(k, B.n), k / at[0][1] * 100, "var(--warm)")).join("")}` : ""}
+    ${B.sc ? `<p class="sub" style="margin-top:6px">${B.sc} while scoring.</p>` : ""}</div>`;
+}
 function statsAccuracy(st) {
   if (!st.picked) return `<div class="card empty">Accuracy builds from the darts you pick after each visit. Pick the darts on a few visits and this fills in.</div>`;
   const F = [["scoring", "Scoring"], ["tgt", "By target"], ["dbl", "At a double"], ["finishing", "170 and below"], ["all", "All"]];
@@ -2087,6 +2103,7 @@ function statsAccuracy(st) {
       ${tot ? boardHeat(m, ring, seg, dT || tT || (sg ? (sg === 18 ? "T18" : "T" + sg) : null)) : `<p class="empty">No darts here yet.</p>`}
       <p class="sub" style="margin:0;text-align:center">${["scoring", "tgt"].includes(f) ? "Tap a bed to see what your visit usually comes to when the first dart lands there." : "Tap a bed to see it on its own."}</p></div>
     ${tot && seg ? segCard(st, seg, m, tot, f) : ""}
+    ${bounceCard(st)}
     ${tot && top.length ? `<div class="card"><p class="h2" style="margin-bottom:4px">Most hit${ring === "all" ? "" : ` · ${{ T: "trebles", D: "doubles", S: "singles", bull: "bull", O: "outside" }[ring]}`}</p>${top.map(([x, k]) => `<div class="brow"><span class="lab">${segName(x)}</span><div class="bar warm"><i style="width:${k / top[0][1] * 100}%"></i></div><span class="n">${fmtN(k)}</span><span class="p">${pct(k, tot)}</span></div>`).join("")}</div>` : ""}
     ${(() => { const tl = [...st.tgt.entries()].filter(([, e]) => e.n >= 10).sort((a, b) => b[1].n - a[1].n).slice(0, 14); return tl.length ? `<div class="card"><p class="h2">Hit rate by target</p><p class="sub" style="margin-bottom:6px">Targets you've aimed at 10 or more times</p>
       <table class="tbl"><tr><th>Target</th><th>Darts</th><th>Hit</th><th>In the bed</th></tr>${tl.map(([t, e]) => `<tr><td><b>${segName(t)}</b></td><td class="muted">${fmtN(e.n)}</td><td><b>${pct(e.hit, e.n)}</b></td><td>${pct(e.bed, e.n)}</td></tr>`).join("")}</table></div>` : ""; })()}
@@ -2548,11 +2565,11 @@ document.addEventListener("click", e => {
   if (d.popt != null && P) { chooseCombo(+d.popt); return; }
   if (d.pord != null && P) { tapOrder(+d.pord); return; }
   if (d.bmult && P) { P.b.mult = d.bmult; drawPicker(); return; }
-  if ((d.bnum || d.bseg) && P) { if (P.b.darts.length >= 3 || P.auto || P.mis) return; const x = d.bseg || ((d.bnum && P.b.mult) + d.bnum); P.b.darts.push(x); P.b.aims.push(P.aim || null); P.b.mult = "S"; sfx("click"); buildCheck(); return; }
-  if (d.bslot != null && P) { P.b.darts = P.b.darts.slice(0, +d.bslot); P.b.aims = P.b.aims.slice(0, +d.bslot); P.mis = null; P.auto = false; drawPicker(); return; }
+  if ((d.bnum || d.bseg) && P) { if (P.b.darts.length >= 3 || P.auto || P.mis) return; const bo = d.bseg === "BO", x = bo ? "M" : d.bseg || ((d.bnum && P.b.mult) + d.bnum); (P.b.bo ||= [])[P.b.darts.length] = bo; P.b.darts.push(x); P.b.aims.push(P.aim || null); P.b.mult = "S"; sfx("click"); buildCheck(); return; }
+  if (d.bslot != null && P) { P.b.darts = P.b.darts.slice(0, +d.bslot); P.b.aims = P.b.aims.slice(0, +d.bslot); P.b.bo = (P.b.bo || []).slice(0, +d.bslot); P.mis = null; P.auto = false; drawPicker(); return; }
   if (d.paim != null && P && P.kind === "pick") {
     const a = d.paim, cur = P.aim;
-    if (!a || a === "B" || a === "25") P.aim = a ? (cur === a ? null : a) : null;
+    if (!a || a === "B" || a === "25" || a === "X") P.aim = a ? (cur === a ? null : a) : null;
     else { const n = +a, cyc = (n <= 6 ? ["S", "D"] : ["T", "S", "D"]).map(k => k + n), i = cyc.indexOf(cur); P.aim = i < 0 ? cyc[0] : cyc[i + 1] || null; }   // treble, then single, then double, then off
     P.aimSet = true; drawPicker(); return; }
   if (d.dsel != null && P) { const k = +d.dsel; P.sel[k] = !P.sel[k]; drawQuestions(); return; }
@@ -2587,12 +2604,12 @@ document.addEventListener("click", e => {
   else if (a === "abandon") { S.meta.active = null; saveMeta(); closeSheet(); render(); toast("Leg stopped. It stays in your history."); }
   else if (a === "discard") { const l = activeLeg(); if (l) { l.del = true; persist([l]); if (l.m && M()) S.meta.match = null; } S.meta.active = null; saveMeta(); closeSheet(); render(); toast("Leg discarded"); }
   else if (a === "close") closeSheet();
-  else if (a === "p-build") { P.step = "build"; P.b = { mult: "S", darts: [], aims: [] }; drawPicker(); }
+  else if (a === "p-build") { P.step = "build"; P.b = { mult: "S", darts: [], aims: [], bo: [] }; drawPicker(); }
   else if (a === "b-back" || a === "p-back") { P.step = "list"; drawPicker(); }
   else if (a === "p-reset") { P.used = []; P.order = []; P.auto = false; drawPicker(); }
-  else if (a === "b-clear") { P.b.darts = []; P.b.aims = []; P.mis = null; P.auto = false; drawPicker(); }
+  else if (a === "b-clear") { P.b.darts = []; P.b.aims = []; P.b.bo = []; P.mis = null; P.auto = false; drawPicker(); }
   else if (a === "aim-more") { P.aimMore = !P.aimMore; drawPicker(); }
-  else if (a === "mis-use") { const v = P.v, e = P.mis; v.s = e.s; v.d = e.d; setAims(v, P.b.aims.slice(0, e.d.length)); v.f = e.f || undefined; v.b = e.b || undefined; if (!v.f) delete v.du; P.mis = null; askOrSave(leg, v, true); }
+  else if (a === "mis-use") { const v = P.v, e = P.mis; v.s = e.s; v.d = e.d; setAims(v, P.b.aims.slice(0, e.d.length)); setBo(v, P.b.bo); v.f = e.f || undefined; v.b = e.b || undefined; if (!v.f) delete v.du; P.mis = null; askOrSave(leg, v, true); }
   else if (a === "mis-fix") { P.b.darts.pop(); P.b.aims.pop(); P.mis = null; drawPicker(); }
   else if (a === "p-skip") askOrSave(leg, P.v, false);
   else if (a === "q-save") {
