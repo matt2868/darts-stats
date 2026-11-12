@@ -64,6 +64,8 @@ h1{font-family:var(--disp);font-size:31px;font-weight:800;letter-spacing:-.02em;
 .bar i{display:block;height:100%;background:var(--acc)}
 .brow{display:flex;align-items:center;gap:10px;font-size:14px;padding:5px 0}
 .brow .lab{width:84px;flex-shrink:0}
+.browbtn{display:block;width:100%;background:none;border:0;border-radius:8px;padding:0 4px;margin:0 -4px;text-align:left;font:inherit;color:inherit;cursor:pointer}.browbtn.on{background:var(--acc-soft,#e6f0ea)}
+.browbtn .lab{text-decoration:underline dotted var(--muted);text-underline-offset:3px}
 .brow .n{color:var(--muted);width:52px;text-align:right;flex-shrink:0}
 .brow .p{font-weight:600;width:46px;text-align:right;flex-shrink:0}
 .stackbar{display:flex;height:14px;border-radius:4px;overflow:hidden;gap:2px}
@@ -215,6 +217,7 @@ button:active:not(:disabled){transform:scale(.97)}
 @keyframes land{0%{transform:scale(1.5);opacity:0}100%{transform:none;opacity:1}}
 /* visits */
 .visits .more{display:block;width:100%;border:0;background:none;color:var(--acc);font-weight:600;font-size:14px;padding:10px 0 8px;text-align:center}
+.card button.more{display:block;width:100%;border:0;background:none;color:var(--acc);font:inherit;font-weight:600;font-size:14px;padding:8px 0 2px;text-align:left;cursor:pointer}
 .rhead,.rrow{display:grid;grid-template-columns:18px minmax(0,1fr) minmax(0,1fr);column-gap:12px}
 .rhead{font-size:12px;color:var(--muted);padding:9px 0 5px;border-bottom:1px solid var(--line2)}
 .rhead span:last-child{color:var(--warm-dark)}
@@ -918,8 +921,8 @@ const BOGEY = new Set([159, 162, 163, 165, 166, 168, 169]);
 const topOf = (m, n) => [...m.entries()].sort((a, b) => b[1] - a[1] || a[0] - b[0]).slice(0, n);
 /** How you made a score: the darts behind it, most common first. */
 function comboList(dm, tot) {
-  const rows = [...dm.entries()].filter(([k]) => k).sort((a, b) => b[1] - a[1]), skipped = dm.get("") || 0;
-  return `${rows.slice(0, 8).map(([k, c]) => brow(k, c + "×", pct(c, tot), c / rows[0][1] * 100)).join("")}${rows.length > 8 ? `<p class="sub">and ${rows.length - 8} other ways</p>` : ""}${skipped ? `<p class="sub" style="margin-top:4px">${skipped} time${skipped === 1 ? "" : "s"} without the darts picked</p>` : ""}`;
+  const rows = [...dm.entries()].filter(([k]) => k).sort((a, b) => b[1] - a[1]), skipped = dm.get("") || 0, all = S.sheet && S.sheet.allC;
+  return `${(all ? rows : rows.slice(0, 3)).map(([k, c]) => brow(k, c + "×", pct(c, tot), c / rows[0][1] * 100)).join("")}${rows.length > 3 ? `<button class="more" data-act="c-more">${all ? "Show the top 3" : `+ ${rows.length - 3} more way${rows.length - 3 === 1 ? "" : "s"}`}</button>` : ""}${skipped ? `<p class="sub" style="margin-top:4px">${skipped} time${skipped === 1 ? "" : "s"} without the darts picked</p>` : ""}`;
 }
 function numCard(r, out, compact) {
   const e = numIndex().get(r), rt = r <= 170 ? route(r, 3, out || "double") : null, g = (l, v) => `<div><span class="l">${l}</span><span class="v">${v}</span></div>`;
@@ -988,23 +991,32 @@ function viewScores() {
       <div class="legend"><span>Less <i class="ramp fin"></i> more</span><span><i class="nc fin got"></i>checked out with it</span><span><i class="nc fin"></i>never scored</span></div></div>
     ${sec(180, 100, "Tons")}${sec(99, 60, "60 to 99")}${sec(59, 0, "Under 60")}</div>`;
 }
-function openScore(n) {
-  S.sheet = { kind: "vsc", n };
+function openScore(n, allC) {
+  S.sheet = { kind: "vsc", n, allC: !!allC };
   const { idx, vis } = scoreIndex(), e = idx.get(n), g = (l, v) => `<div><span class="l">${l}</span><span class="v">${v}</span></div>`;
   if (!e) { openSheet(`<div class="stack" style="gap:12px"><div><span class="s13 muted">Visit score</span><p class="sheet-title">${n}</p></div><div class="card"><p class="sub">You haven't scored ${n} yet.</p></div></div>`); return; }
-  const fin = [...e.fin.entries()].sort((a, b) => b[1] - a[1]), onFin = e.n - e.scoring;
+  const fin = [...e.fin.entries()].map(([r, c]) => [`On ${r}${r === n ? " (checkout)" : ""}`, c]).concat(e.scoring ? [["More than 170", e.scoring]] : []).sort((a, b) => b[1] - a[1]), onFin = e.n - e.scoring;
   openSheet(`<div class="stack" style="gap:12px"><div><span class="s13 muted">Visit score</span><p class="sheet-title">${n}</p></div>
     <div class="card"><div class="grid3">${g("Scored", e.n + "×")}${g("Of your visits", pct(e.n, vis))}${g("Last time", fmtDate(e.last))}
       ${g("While scoring", pct(e.scoring, e.n))}${g("On 170 or less", pct(onFin, e.n))}${g("Checkouts", e.outs || "–")}</div></div>
     <div class="card"><p class="h2">How you make it</p><p class="sub" style="margin-bottom:6px">The darts, most common first</p>${comboList(e.combos, e.n)}</div>
-    ${fin.length ? `<div class="card"><p class="h2">Where you were</p><p class="sub" style="margin-bottom:6px">${e.scoring ? `${e.scoring} while scoring (more than 170 left), the rest on these` : "The score you were on"}</p>
-      ${fin.slice(0, 8).map(([r, c]) => brow(`On ${r}${r === n ? " (checkout)" : ""}`, c + "×", pct(c, e.n), c / fin[0][1] * 100)).join("")}${fin.length > 8 ? `<p class="sub">and ${fin.length - 8} others</p>` : ""}</div>` : ""}</div>`);
+    <div class="card"><p class="h2">Where you were</p><p class="sub" style="margin-bottom:6px">The score you were on when you made it</p>
+      ${fin.slice(0, 8).map(([l, c]) => brow(l, c + "×", pct(c, e.n), c / fin[0][1] * 100)).join("")}${fin.length > 8 ? `<p class="sub">and ${fin.length - 8} others</p>` : ""}</div></div>`);
 }
-function openNum(n, sc) {
-  S.sheet = { kind: "num", n, sc: sc ?? null };
-  const e = numIndex().get(n);
-  openSheet(`<div class="stack" style="gap:12px"><div><span class="s13 muted">${n > 170 ? "Scoring" : BOGEY.has(n) ? "Bogey number" : "Finish"}</span><p class="sheet-title">${n}</p></div>${numCard(n, "double", false)}
-    ${e && e.toFin.length ? `<div class="card">${kv("Darts to finish the leg from here", f1(mean(e.toFin)))}${kv("Busts from here", e.busts)}</div>` : ""}</div>`);
+function openNum(n, sc, allC) {
+  S.sheet = { kind: "num", n, sc: sc ?? null, allC: !!allC };
+  const e = numIndex().get(n), rt = n <= 170 ? route(n, 3, "double") : null, g = (l, v) => `<div><span class="l">${l}</span><span class="v">${v}</span></div>`;
+  const head = `<div class="between"><div><span class="s13 muted">${n > 170 ? "Scoring" : BOGEY.has(n) ? "Bogey number" : "Finish"}</span><p class="sheet-title">${n}</p></div>${rt ? `<span class="tag">${rt.map(segLabel).join(" ")}</span>` : n <= 170 ? `<span class="tag" style="background:#b8a676">No finish</span>` : ""}</div>`;
+  if (!e) { openSheet(`<div class="stack" style="gap:12px">${head}<div class="card"><p class="sub">You haven't been on ${n} yet.</p></div></div>`); return; }
+  const scs = topOf(e.sc, 8), lv = topOf(e.leave, 6), scTot = sum([...e.sc.values()]), lvTot = sum([...e.leave.values()]);
+  openSheet(`<div class="stack" style="gap:12px">${head}
+    <div class="card"><div class="grid3">${g("Been here", e.n + "×")}${g("Average score", f1(e.pts / e.n))}${g("Usually leave", lv.length ? lv[0][0] : "–")}
+      ${rt ? g("Checked out", pct(e.outs, e.n)) : g("Busts", e.busts)}${rt ? g("At a double", e.att ? `${e.outs}/${e.att}` : "–") : g("Won the leg", pct(e.won, e.n))}${g(rt ? "Won the leg" : "Darts to finish", rt ? pct(e.won, e.n) : e.toFin.length ? f1(mean(e.toFin)) : "–")}</div></div>
+    ${scs.length ? `<div class="card"><p class="h2">What you score from here</p><p class="sub" style="margin-bottom:6px">Tap a score to see the darts behind it</p>
+      ${scs.map(([x, c]) => `<button class="browbtn${sc === x ? " on" : ""}" data-nsc="${x}">${brow(String(x), c + "×", pct(c, scTot), c / scs[0][1] * 100)}</button>${sc === x && e.scD.has(x) ? `<div style="margin:2px 0 8px 12px">${comboList(e.scD.get(x), c)}</div>` : ""}`).join("")}</div>` : ""}
+    ${lv.length ? `<div class="card"><p class="h2">What you leave</p><p class="sub" style="margin-bottom:6px">Where the visit from ${n} usually ends up</p>${lv.map(([x, c]) => brow(String(x), c + "×", pct(c, lvTot), c / lv[0][1] * 100, "var(--warm)")).join("")}</div>` : ""}
+    ${e.routes.size ? `<div class="card"><p class="h2">Your darts from here</p><p class="sub" style="margin-bottom:6px">Most common first</p>${sc == null ? comboList(e.routes, sum([...e.routes.values()])) : comboList(e.routes, sum([...e.routes.values()]))}</div>` : ""}
+    ${e.toFin.length ? `<div class="card">${kv("Darts to finish the leg from here", f1(mean(e.toFin)))}${kv("Busts from here", e.busts)}</div>` : ""}</div>`);
 }
 function finishInfo(leg, rem) {
   const H = pickHistory(), r = H.reach.get(rem), rt = route(rem, 3, leg.out) || [], t = finishTarget(rem) || rt[rt.length - 1];
@@ -1708,7 +1720,7 @@ function compute(legs) {
     legDarts: [], outsVals: [], dbl: new Map(), byVisit: [], sessions: new Map(), byLegNo: [], byHour: [0, 1, 2, 3].map(() => ({ p: 0, d: 0 })),
     picked: 0, heat: { all: new Map(), scoring: new Map(), at20: new Map(), at19: new Map(), at18: new Map(), finishing: new Map(), dbl: new Map() }, leftOn: new Map(),
     sw: { vis: 0, withSw: 0, swP: 0, swN: 0, noP: 0, noN: 0, types: new Map(), trig: new Map(), after: { n: 0, p: 0, t: 0 }, stay: { n: 0, p: 0, t: 0 } },
-    byDart: [0, 1, 2].map(() => ({ n: 0, p: 0, t: 0, t20: 0, b20: 0 })), after: { t: { n: 0, h: 0 }, o: { n: 0, h: 0 } }, dblPos: [0, 1, 2].map(() => ({ att: 0, hit: 0 })), dblAim: new Map(), phase: { to: [], from: [], vis: [], sp: 0, sd: 0, fp: 0, fd: 0, list: [] }, seq: [], legSeq: [], heatDblT: new Map(), first: new Map(), firstAll: { n: 0, tot: 0 }, heatT: new Map(), tgt: new Map(), bigS: { n: 0, hit: 0, bed: 0 } };
+    byDart: [0, 1, 2].map(() => ({ n: 0, p: 0, t: 0, t20: 0, b20: 0 })), after: { t: { n: 0, h: 0 }, o: { n: 0, h: 0 } }, dblPos: [0, 1, 2].map(() => ({ att: 0, hit: 0 })), dblAim: new Map(), phase: { to: [], from: [], vis: [], sp: 0, sd: 0, fp: 0, fd: 0, list: [] }, seq: [], legSeq: [], heatDblT: new Map(), first: new Map(), firstAll: { n: 0, tot: 0 }, heatT: new Map(), tgt: new Map(), bigS: { n: 0, hit: 0, bed: 0, t: 0, d: 0 }, primDbl: new Map() };
   const inc = (m, k) => m.set(k, (m.get(k) || 0) + 1);
   for (const l of legs) {
     let lp = 0, ld = 0;
@@ -1748,7 +1760,7 @@ function compute(legs) {
           const a = aims[k], key = x === "M" ? (a.n && a.n !== 25 ? "O" + a.n : null) : x;
           if (key) { inc(st.heat.all, key); if (r > 170) { inc(st.heat.scoring, key); if (a.n === 20) inc(st.heat.at20, key); if (a.n === 19) inc(st.heat.at19, key); if (a.n === 18) inc(st.heat.at18, key); } else inc(st.heat.finishing, key); }
           if (a.seg && key) { if (!a.dbl) { const hm = st.heatT.get(a.seg) || new Map(); inc(hm, key); st.heatT.set(a.seg, hm); }   /* darts at the finishing double (the bull on 50 too) live under At a double */ const e = st.tgt.get(a.seg) || { n: 0, hit: 0, bed: 0 }; e.n++; if (x === a.seg) e.hit++; if (x !== "M" && segNum(x) === a.n) e.bed++; st.tgt.set(a.seg, e); }
-          if (r <= 170 && !a.dbl && a.seg && /^S(1[1-9]|20)$/.test(a.seg)) { st.bigS.n++; if (x === a.seg) st.bigS.hit++; if (x !== "M" && segNum(x) === a.n) st.bigS.bed++; }   // needing a big single to set up a finish
+          if (r <= 170 && !a.dbl && a.seg && /^S(1[1-9]|20)$/.test(a.seg)) { st.bigS.n++; if (x === a.seg) st.bigS.hit++; if (x !== "M" && segNum(x) === a.n) { st.bigS.bed++; if (x[0] === "T") st.bigS.t++; if (x[0] === "D") st.bigS.d++; } }   // needing a big single to set up a finish
           if (a.dbl && key) { inc(st.heat.dbl, key); const hm = st.heatDblT.get(a.dbl) || new Map(); inc(hm, key); st.heatDblT.set(a.dbl, hm); }
           if (k === 0 && key && r > 170 && !v.b) { const e = st.first.get(key) || { n: 0, tot: 0, sc: new Map() }; e.n++; e.tot += v.s; inc(e.sc, v.s); st.first.set(key, e); st.firstAll.n++; st.firstAll.tot += v.s; }
           if (r > 170 && k < 3) {
@@ -1759,6 +1771,15 @@ function compute(legs) {
         });
       }
     });
+    if (l.out === "double") {   /* the first double you leave yourself in the leg; the bull only when you went for it on 50 */
+      let found = null;
+      for (const v of l.v) {
+        if (found || v.r == null) break;
+        if (v.d && v.d.length) { const aims = inferAims(v, l.out); for (const a of aims) { const t = finishTarget(a.r); if (t && (t !== "DB" || a.dbl === "DB")) { found = t; break; } } }
+        else { const t = finishTarget(v.r); if (t && t !== "DB") found = t; }
+      }
+      if (found) { const e = st.primDbl.get(found) || { n: 0, out: 0 }; e.n++; const lv = l.v[l.v.length - 1]; if (l.done && lv.d && lv.d[lv.d.length - 1] === found) e.out++; st.primDbl.set(found, e); }
+    }
     { // phases of the leg: getting down to a finish, then finishing
       let r = l.st, dTo = 0, dFrom = 0, vis = 0, r0 = null;
       l.v.forEach(v => { const d = dartsOf(v), sc = scored(v); if (r > 170) { dTo += d; st.phase.sp += sc; st.phase.sd += d; } else { if (r0 == null) r0 = r; dFrom += d; vis++; st.phase.fp += sc; st.phase.fd += d; } r -= sc; st.seq.push(v); });
@@ -1942,6 +1963,13 @@ function fromCard(st) {
     <p class="s13 muted" style="margin:12px 0 4px">By where you got to</p>${bands.map(b => brow(b.l, b.n + " legs", f1(b.m), b.m / mx * 100)).join("")}
     <p class="s13 muted" style="margin:12px 0 0">How many darts it took</p><div style="margin-top:6px">${barChart(bins, { label: "Darts to check out from a finish" })}</div></div>`;
 }
+function primDblCard(st) {
+  const list = [...st.primDbl.entries()].sort((a, b) => b[1].n - a[1].n), tot = sum(list.map(x => x[1].n)); if (!tot) return "";
+  const known = list.some(([, e]) => e.out);
+  return `<div class="card"><p class="h2">First double left</p><p class="sub" style="margin-bottom:6px">The first double you leave yourself in each leg, before any misses send you down. The bull only counts when you went for it on 50, not when you set up from there.</p>
+    ${list.slice(0, 8).map(([t, e]) => brow(segLabel(t), e.n + "×", pct(e.n, tot), e.n / list[0][1].n * 100)).join("")}
+    ${known ? `<p class="sub" style="margin-top:6px">Finished the leg on that same double: ${list.slice(0, 4).filter(([, e]) => e.n >= 3).map(([t, e]) => `${segLabel(t)} ${pct(e.out, e.n)}`).join(" · ") || "–"}</p>` : ""}</div>`;
+}
 function leftOnCard(st) {
   if (!st.leftOn.size) return "";
   const all = [...Array(20)].map((_, i) => "D" + (i + 1)).concat("DB").map(t => [t, st.leftOn.get(t) || { n: 0, outs: 0 }]);
@@ -1955,7 +1983,7 @@ const DBL_ORDER = t => t === "DB" ? 99 : 21 - +t.slice(1);
 function bigSCard(st) {
   const b = st.bigS; if (b.n < 3) return "";
   return `<div class="card"><p class="h2">Big singles</p><p class="sub" style="margin-bottom:6px">Darts at a single 11 to 20 on 170 or less, like S20 on 60 or S16 on 56</p>
-    ${brow("Hit the single", fmtN(b.hit), pct(b.hit, b.n), b.hit / b.n * 100)}${brow("In the right bed", fmtN(b.bed), pct(b.bed, b.n), b.bed / b.n * 100)}<p class="sub" style="margin-top:6px">${fmtN(b.n)} darts. "In the right bed" includes the treble and double of that number.</p></div>`;
+    ${brow("Hit the single", fmtN(b.hit), pct(b.hit, b.n), b.hit / b.n * 100)}${brow("Its treble", fmtN(b.t), pct(b.t, b.n), b.t / b.n * 100, "var(--warm)")}${brow("Its double", fmtN(b.d), pct(b.d, b.n), b.d / b.n * 100, "var(--warm)")}<p class="sub" style="margin-top:6px">${fmtN(b.n)} darts.</p></div>`;
 }
 function statsFinishing(st) {
   const finished = st.legDarts.length;
@@ -1976,6 +2004,7 @@ function statsFinishing(st) {
     ${fromCard(st)}
     ${rangesCard(st)}
     ${bigSCard(st)}
+    ${primDblCard(st)}
     ${leftOnCard(st)}
     <div class="card"><p class="h2">Doubles</p><p class="sub" style="margin-bottom:6px">From visits where you picked the darts</p>
       ${dbl.length ? `<table class="tbl"><tr><th>Double</th><th>Darts</th><th>Hit</th><th>Rate</th></tr>${dbl.map(([t, e]) => `<tr><td><b>${t === "Others" ? "Others" : segLabel(t)}</b></td><td class="muted">${e.att}</td><td class="muted">${e.hit}</td><td><b>${pct(e.hit, e.att)}</b></td></tr>`).join("")}</table>` : `<p class="empty" style="padding:12px">No darts at a double picked yet.</p>`}</div>
@@ -2512,6 +2541,7 @@ document.addEventListener("click", e => {
   else if (a === "toggle-visits") { S.showAll = !S.showAll; render(); }
   else if (a === "m-report") { const ml = matchLegs(d.id); S.sheet = { kind: "report" }; openSheet(`<div class="stack" style="gap:14px"><div><span class="s13 muted">${fmtDate(ml[0].at)} · first to ${ml[0].m.first}</span><p class="sheet-title">Match report</p></div>${matchReport(d.id)}<button class="btn primary" data-act="close">Done</button></div>`); }
   else if (a === "s-report") { const ls = liveLegs().filter(l => l.sid === d.id && l.v.length); S.sheet = { kind: "report" }; openSheet(`<div class="stack" style="gap:14px"><div><span class="s13 muted">${fmtDate(ls[0].at)}</span><p class="sheet-title">Session summary</p></div>${sessionReport(ls)}<button class="btn primary" data-act="close">Done</button></div>`); }
+  else if (a === "c-more" && S.sheet) { const P = S.sheet; if (P.kind === "num") openNum(P.n, P.sc, !P.allC); else if (P.kind === "vsc") openScore(P.n, !P.allC); }
   else if (a === "bands") { S.set.bands = S.set.bands === "19" ? "20" : "19"; saveSettings(); STATCACHE.clear(); render(); toast(S.set.bands === "19" ? "Score bands: 57, 95, 133, 171" : "Score bands: 60, 100, 140, 180"); }
   else if (a === "seg-clear") { S.stats.seg = null; render(); }
   else if (a === "wrap-list") openWrapList();
